@@ -50,6 +50,17 @@
   \vspace{0.4em}
 }
 
+% 选择题选项（AB 一行，CD 一行；各占 1/2 宽度，区域内左对齐）
+\newcommand{\fourchoicestwo}[4]{%
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(A)}#1\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(B)}#2\end{minipage}\par
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(C)}#3\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(D)}#4\end{minipage}\par
+  \vspace{0.4em}
+}
+
 % 两栏式选项（短选项）
 \newcommand{\twochoices}[4]{%
   \begin{tasks}[counter-format={(A)},label-align=left,label-offset={0.4em},label-width={1.6em},item-indent=2em,column-sep=1.5em](2)
@@ -96,19 +107,19 @@
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
 \qitem{1}{在大模型混合精度（Mixed-Precision）训练中，使用 AdamW 优化器并维护 FP32 版本的 Master Weights。对于参数量为 $\Phi$ 的模型，仅存储模型参数、梯度和优化器状态（不含激活值与通信缓存），每个参数平均需要占用的显存大小为}{}
-\fourchoices{$12\Phi$ 字节}{$16\Phi$ 字节}{$18\Phi$ 字节}{$20\Phi$ 字节}
+\fourchoicestwo{$12\Phi$ 字节}{$16\Phi$ 字节}{$18\Phi$ 字节}{$20\Phi$ 字节}
 
 \qitem{2}{根据 Chinchilla Scaling Law（Hoffmann 等人提出的缩放定律），在给定计算量预算 $C$（单位：FLOPs）下，模型参数量 $N$ 与训练 Token 数 $D$ 的最优分配比例应满足 $C \approx 6ND$。当算力预算增加到原来的 $k$ 倍时，为了达到最优训练效果，模型参数量 $N$ 和训练数据量 $D$ 的理论增长比例大约为}{}
 \fourchoices{$N$ 增长 $k^{0.73}$ 倍，$D$ 增长 $k^{0.27}$ 倍}{$N$ 增长 $k^{0.5}$ 倍，$D$ 增长 $k^{0.5}$ 倍}{$N$ 增长 $k^{0.3}$ 倍，$D$ 增长 $k^{0.7}$ 倍}{$N$ 增长 $k$ 倍，$D$ 保持不变}
 
 \qitem{3}{在流水线并行（Pipeline Parallelism）中，采用 1F1B（One Forward, One Backward）调度策略。设流水线阶段数为 $P$，一个 Batch 内被切分成的微批（Micro-batch）数量为 $M$（满足 $M \ge P$）。若单次前向传播时间为 $F$，单次反向传播时间为 $B$，则在一个完整的训练步（Step）中，由于气泡（Bubble）导致的处理器空闲时间占总时间的比例（气泡率）为}{}
-\fourchoices{$\dfrac{P-1}{M+P-1}$}{$\dfrac{P-1}{M}$}{$\dfrac{M-1}{M+P-1}$}{$\dfrac{P}{M}$}
+\fourchoicestwo{$\dfrac{P-1}{M+P-1}$}{$\dfrac{P-1}{M}$}{$\dfrac{M-1}{M+P-1}$}{$\dfrac{P}{M}$}
 
 \qitem{4}{在 Megatron-LM 样式的张量并行（Tensor Parallelism, TP）中，一个标准的 Transformer 层包含自注意力（Self-Attention）和多层感知机（MLP）两个子块。若 TP 的切分大小为 $t$，在单层前向传播过程中，各个 GPU 之间需要进行集体通信。如果不使用序列并行，该层前向传播总共需要执行的通信操作为}{}
 \fourchoices{2 次 All-Reduce}{2 次 All-Gather 和 2 次 Reduce-Scatter}{4 次 All-Reduce}{1 次 All-Reduce 和 1 次 All-Gather}
 
 \qitem{5}{在大模型训练中，激活重计算（Activation Checkpointing / Gradient Checkpointing）常用于以计算换显存。若对某一 Transformer 层采用选择性重计算（Selective Checkpointing）策略，丢弃其中 $75\%$ 容易重新计算的中间激活值。设该层原本的前向传播计算时间为 $T_f$，则采用该策略后，该层在反向传播时因重计算引入的额外时间开销约为}{}
-\fourchoices{$0.25 T_f$}{$0.5 T_f$}{$0.75 T_f$}{$1.5 T_f$}
+\fourchoicestwo{$0.25 T_f$}{$0.5 T_f$}{$0.75 T_f$}{$1.5 T_f$}
 
 \qitem{6}{关于 DeepSpeed 提出的 ZeRO（Zero Redundancy Optimizer）三种阶段（Stage 1/2/3）对模型状态显存的切分，下列说法\textbf{错误}的是}{}
 \fourchoices{ZeRO-1 仅将优化器状态（Optimizer States）进行分片存储，不切分权重和梯度}{ZeRO-2 在 ZeRO-1 的基础上，进一步将梯度（Gradients）进行分片存储}{ZeRO-3 将优化器状态、梯度和模型权重（Weights）均进行分片存储}{ZeRO 各阶段通过分片存储激活值（Activations）来彻底解决超长文本训练时的 OOM 问题}
@@ -117,13 +128,13 @@
 \fourchoices{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)} - \beta \log \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_\theta(y_w|x)} - \beta \log \dfrac{\pi_{ref}(y_l|x)}{\pi_\theta(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_l|x)} - \log \sigma \left( \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_w|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \log \dfrac{\pi_\theta(y_w|x)}{\pi_\theta(y_l|x)} - \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_{ref}(y_l|x)} \right) \right]$}
 
 \qitem{8}{在使用分布式数据并行（DDP）训练时，各节点需要对梯度进行同步。若集群有 $P$ 个 GPU 节点，梯度数据总大小为 $V$ 字节，采用环形全归约（Ring-AllReduce）算法。在每个训练步的梯度同步阶段，每个 GPU 发送的总数据量为}{}
-\fourchoices{$V$ 字节}{$\dfrac{2(P-1)V}{P}$ 字节}{$\dfrac{(P-1)V}{P}$ 字节}{$2PV$ 字节}
+\fourchoicestwo{$V$ 字节}{$\dfrac{2(P-1)V}{P}$ 字节}{$\dfrac{(P-1)V}{P}$ 字节}{$2PV$ 字节}
 
 \qitem{9}{在大模型预训练的初始阶段，学习率通常需要经历一个温热启动（Warm-up）阶段（即从 0 渐进增加到设定的最大学习率 $\eta_{max}$），其核心数学与物理机理是}{}
 \fourchoices{随机初始化的权重导致早期梯度极不稳定，较小的学习率可以避免模型在训练初期发散}{增加前期梯度的绝对方差，使得模型更容易跳出局部最优解}{限制前期权重更新的 L2 范数，等效于引入强力的权重衰减（Weight Decay）}{缓解数据分布不均匀导致的早期过拟合}
 
 \qitem{10}{对于一个标准的自回归 Decoder-only Transformer 模型（不使用激活重计算），在单步训练中，反向传播（Backward Pass）阶段所需的计算量（FLOPs）理论上大约是前向传播（Forward Pass）阶段的}{}
-\fourchoices{1 倍}{1.5 倍}{2 倍}{3 倍}
+\fourchoicestwo{1 倍}{1.5 倍}{2 倍}{3 倍}
 
 \qitem{11}{在人类反馈强化学习（RLHF）的 PPO 阶段，为了防止策略模型 $\pi_\theta$ 偏离初始的 SFT 模型 $\pi_{SFT}$ 太远导致"奖励作弊（Reward Hacking）"，通常会在奖励函数中引入 KL 散度惩罚。若原始奖励模型输出为 $R(x, y)$，惩罚系数为 $\beta > 0$，则经 KL 惩罚修正后的实际奖励值 $R_{modified}$ 表达式为}{}
 \fourchoices{$R(x, y) - \beta \log \dfrac{\pi_{SFT}(y|x)}{\pi_\theta(y|x)}$}{$R(x, y) - \beta \log \dfrac{\pi_\theta(y|x)}{\pi_{SFT}(y|x)}$}{$R(x, y) + \beta \left( \pi_\theta(y|x) - \pi_{SFT}(y|x) \right)$}{$R(x, y) \cdot e^{-\beta D_{KL}(\pi_\theta \| \pi_{SFT})}$}
@@ -209,7 +220,7 @@
 \answerlines{3}
 
 \needspace{6cm}
-\qitem{24}{（本小题满分 10 分，压轴题）}{}
+\qitem{24}{（本小题满分 10 分）}{}
 \noindent 长文本（Long Context）训练是当前大模型的核心竞争点之一。环形注意力（Ring Attention）通过在环形拓扑的 GPU 链上切分并循环传递 Key-Value 块，成功突破了单卡处理超长序列的内存墙。设待训练的序列长度为 $S$，隐藏维度为 $D$，注意力头数为 $H$。我们使用由 $N_{ring}$ 张 GPU 组成的环形通信拓扑。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
   \item 详细描述 Ring Attention 的并行工作原理和数据流向：如何通过非阻塞对等通信（Non-blocking P2P Send/Recv），将局部计算与 KV 块的传输进行重叠（Overlap），从而实现无全局 A-matrix（即无 $S \times S$ 完整注意力矩阵）显存驻留的因果注意力计算；（4 分）
