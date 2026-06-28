@@ -65,7 +65,7 @@
 \newcommand{\answerlines}[1]{%
   \vspace{0.2cm}
   \foreach \i in {1,...,#1} {
-    \noindent\rule{\linewidth}{0.4pt}\par\vspace{0.5cm}
+    \noindent{\color{white}\rule{\linewidth}{0.4pt}}\par\vspace{0.5cm}
   }
 }
 
@@ -157,9 +157,7 @@
   \item 写出单条请求 KV Cache 的显存占用公式，并解释"显存带宽瓶颈"在 Decode 阶段为何尤其突出。（2 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{22}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{20}{（本小题满分 10 分）}{}
@@ -176,9 +174,7 @@
   \item 解释 RoPE 相对于绝对位置编码在长度外推（Length Extrapolation）上的优势，并说明 NTK-aware scaling 修改 $\theta_i$ 的方式及其直觉。（5 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{24}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
@@ -189,9 +185,7 @@
   \item 解释 Recomputation 在反向传播中为何能"以算代存"，并据此说明 FlashAttention 反向 IO 复杂度仍保持 $O(N^2 d^2/M)$ 的原因。（2 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{26}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{22}{（本小题满分 10 分）}{}
@@ -202,9 +196,7 @@
   \item 论述为什么该变换能将"难量化的激活值"转化为"易量化的激活值"，而权重侧仍能保持较高量化精度。（3 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{24}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{23}{（本小题满分 10 分）}{}
@@ -215,9 +207,7 @@
   \item 设草稿模型与目标模型每步延迟分别为 $t_d$、$t_v$（验证 $k$ 个 token 的延迟与单步相当），接受率 $\alpha$。推导加速比 $S(k)$ 的表达式，并讨论 $k$ 的最优选择原则。（2 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{26}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{24}{（本小题满分 10 分，压轴）}{}
@@ -228,9 +218,7 @@
   \item 针对现象（c），设计一套包含"PagedAttention + KV Cache Offloading + Prefix Caching"的混合方案，画出/描述数据流并量化预期收益（显存/吞吐）。要求给出量化计算过程。（4 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{28}
+\answerlines{12}
 
 % ============ 答案另起一页 ============
 \newpage
