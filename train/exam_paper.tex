@@ -14,7 +14,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small 大模型推理与部署 期末试卷}
+\fancyhead[L]{\small 大模型训练与并行计算 期末试卷}
 \fancyhead[R]{\small 第 \thepage\ 页}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -73,7 +73,7 @@
 
 % ============ 试卷标题与说明 ============
 \begin{center}
-{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型推理与部署 期末试卷}\\[0.3cm]
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型训练与并行计算 期末试卷}\\[0.3cm]
 {\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}
 \end{center}
 
@@ -86,7 +86,7 @@
   \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
   \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
   \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
-  \item 本试卷中如无特殊说明，自注意力维度记 $d$，序列长度记 $n$ 或 $L$，注意力头数记 $h$，每头维度 $d_h=d/h$，批大小 $B$，词表大小 $V$，KV Cache 中每个标量为 fp16。
+  \item 本试卷中如无特殊说明，模型参数量记为 $\Phi$，隐藏维度记为 $h$，序列长度记为 $s$，批大小（Batch Size）记为 $b$，GPU 数量记为 $P$，混合精度训练默认使用 fp16/bf16 存储模型权重与梯度，优化器状态使用 fp32 存储。
 \end{enumerate}
 
 \vspace{0.2cm}
@@ -95,127 +95,126 @@
 % ============ 一、选择题 ============
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
-\qitem{1}{设序列长度为 $n$，模型隐藏维度为 $d$，则标准 Self-Attention 在单层前向传播中，注意力计算部分（即 $QK^{\top}$ 与 $\mathrm{softmax}(QK^{\top})V$）的时间复杂度为}{}
-\fourchoices{$O(nd)$}{$O(n^2 d)$}{$O(nd^2)$}{$O(n^2 d^2)$}
+\qitem{1}{在大模型混合精度（Mixed-Precision）训练中，使用 AdamW 优化器并维护 FP32 版本的 Master Weights。对于参数量为 $\Phi$ 的模型，仅存储模型参数、梯度和优化器状态（不含激活值与通信缓存），每个参数平均需要占用的显存大小为}{}
+\fourchoices{$12\Phi$ 字节}{$16\Phi$ 字节}{$18\Phi$ 字节}{$20\Phi$ 字节}
 
-\qitem{2}{关于 KV Cache 的作用，下列说法正确的是}{}
-\fourchoices{KV Cache 主要用于降低 Prefill 阶段的计算量}{KV Cache 通过缓存历史 token 的 $Q$ 向量避免重复计算}{KV Cache 是自回归解码时降低每步时间复杂度从 $O(n^2 d)$ 到 $O(nd)$ 的关键}{KV Cache 在 Decode 阶段可以被安全丢弃以节省显存}
+\qitem{2}{根据 Chinchilla Scaling Law（Hoffmann 等人提出的缩放定律），在给定计算量预算 $C$（单位：FLOPs）下，模型参数量 $N$ 与训练 Token 数 $D$ 的最优分配比例应满足 $C \approx 6ND$。当算力预算增加到原来的 $k$ 倍时，为了达到最优训练效果，模型参数量 $N$ 和训练数据量 $D$ 的理论增长比例大约为}{}
+\fourchoices{$N$ 增长 $k^{0.73}$ 倍，$D$ 增长 $k^{0.27}$ 倍}{$N$ 增长 $k^{0.5}$ 倍，$D$ 增长 $k^{0.5}$ 倍}{$N$ 增长 $k^{0.3}$ 倍，$D$ 增长 $k^{0.7}$ 倍}{$N$ 增长 $k$ 倍，$D$ 保持不变}
 
-\qitem{3}{设模型有 $h=32$ 个注意力头，每头维度 $d_h=128$，序列长度 $L=2048$，使用 fp16 存储。关于 MHA、MQA、GQA（分组数 $G=8$）三种方案在 \textbf{单条请求} Decode 阶段每步所需读取的 KV Cache 数据量（字节）大小关系，下列正确的是}{}
-\fourchoices{$\text{MHA}=\text{GQA}=\text{MQA}$}{$\text{MHA} > \text{GQA} > \text{MQA}$ 且 GQA 介于二者之间}{$\text{MQA} > \text{GQA} > \text{MHA}$}{$\text{MHA} > \text{MQA} > \text{GQA}$}
+\qitem{3}{在流水线并行（Pipeline Parallelism）中，采用 1F1B（One Forward, One Backward）调度策略。设流水线阶段数为 $P$，一个 Batch 内被切分成的微批（Micro-batch）数量为 $M$（满足 $M \ge P$）。若单次前向传播时间为 $F$，单次反向传播时间为 $B$，则在一个完整的训练步（Step）中，由于气泡（Bubble）导致的处理器空闲时间占总时间的比例（气泡率）为}{}
+\fourchoices{$\dfrac{P-1}{M+P-1}$}{$\dfrac{P-1}{M}$}{$\dfrac{M-1}{M+P-1}$}{$\dfrac{P}{M}$}
 
-\qitem{4}{关于 RoPE（旋转位置编码）相对于绝对正弦位置编码的优势，下列说法\textbf{错误}的是}{}
-\fourchoices{RoPE 仅作用于 Q、K 而不作用于 V，相对位置信息通过旋转矩阵的内积自然得到}{RoPE 具有远程衰减性质，有助于模型关注局部依赖}{RoPE 可以通过调整旋转基 $\theta$ 的缩放因子（如 NTK-aware scaling）实现长度外推}{RoPE 的引入使得注意力计算的时间复杂度从 $O(n^2 d)$ 上升至 $O(n^3)$}
+\qitem{4}{在 Megatron-LM 样式的张量并行（Tensor Parallelism, TP）中，一个标准的 Transformer 层包含自注意力（Self-Attention）和多层感知机（MLP）两个子块。若 TP 的切分大小为 $t$，在单层前向传播过程中，各个 GPU 之间需要进行集体通信。如果不使用序列并行，该层前向传播总共需要执行的通信操作为}{}
+\fourchoices{2 次 All-Reduce}{2 次 All-Gather 和 2 次 Reduce-Scatter}{4 次 All-Reduce}{1 次 All-Reduce 和 1 次 All-Gather}
 
-\qitem{5}{关于 Prefill 阶段与 Decode 阶段的计算特性，下列判断正确的是}{}
-\fourchoices{Prefill 通常是 Memory-bound，Decode 通常是 Compute-bound}{Prefill 通常是 Compute-bound，Decode 通常是 Memory-bound}{两个阶段都是 Compute-bound}{两个阶段都是 Memory-bound}
+\qitem{5}{在大模型训练中，激活重计算（Activation Checkpointing / Gradient Checkpointing）常用于以计算换显存。若对某一 Transformer 层采用选择性重计算（Selective Checkpointing）策略，丢弃其中 $75\%$ 容易重新计算的中间激活值。设该层原本的前向传播计算时间为 $T_f$，则采用该策略后，该层在反向传播时因重计算引入的额外时间开销约为}{}
+\fourchoices{$0.25 T_f$}{$0.5 T_f$}{$0.75 T_f$}{$1.5 T_f$}
 
-\qitem{6}{PagedAttention 主要解决的显存问题\textbf{不包括}}{}
-\fourchoices{KV Cache 的内部碎片（Internal Fragmentation）}{KV Cache 的外部碎片（External Fragmentation）}{请求序列长度差异导致的预分配浪费}{Decode 阶段每步矩阵乘法的算子融合效率}
+\qitem{6}{关于 DeepSpeed 提出的 ZeRO（Zero Redundancy Optimizer）三种阶段（Stage 1/2/3）对模型状态显存的切分，下列说法\textbf{错误}的是}{}
+\fourchoices{ZeRO-1 仅将优化器状态（Optimizer States）进行分片存储，不切分权重和梯度}{ZeRO-2 在 ZeRO-1 的基础上，进一步将梯度（Gradients）进行分片存储}{ZeRO-3 将优化器状态、梯度和模型权重（Weights）均进行分片存储}{ZeRO 各阶段通过分片存储激活值（Activations）来彻底解决超长文本训练时的 OOM 问题}
 
-\qitem{7}{关于 Static Batching、Continuous Batching 与 In-flight Batching 的描述，\textbf{正确}的是}{}
-\fourchoices{Static Batching 在请求长度差异大时 GPU 利用率最高}{Continuous Batching 允许在任意 token 边界插入新请求、踢出已完成请求}{In-flight Batching 等价于 Continuous Batching，只是 NVIDIA 的命名}{Continuous Batching 要求所有请求的 Prefill 必须同时完成才能进入 Decode}
+\qitem{7}{直接偏好优化（Direct Preference Optimization, DPO）是近年来替代传统基于 PPO 算法的 RLHF 的重要方法。已知提示词为 $x$，人类偏好的好回答为 $y_w$，较差回答为 $y_l$，参考模型为 $\pi_{ref}$，当前训练的策略模型为 $\pi_{\theta}$。DPO 损失函数（不含正则项）的形式为}{}
+\fourchoices{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)} - \beta \log \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_\theta(y_w|x)} - \beta \log \dfrac{\pi_{ref}(y_l|x)}{\pi_\theta(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_l|x)} - \log \sigma \left( \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_w|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \log \dfrac{\pi_\theta(y_w|x)}{\pi_\theta(y_l|x)} - \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_{ref}(y_l|x)} \right) \right]$}
 
-\qitem{8}{下列关于 GPTQ、AWQ、SmoothQuant 三种量化算法的核心思想匹配，\textbf{正确}的是}{}
-\fourchoices{GPTQ 基于激活值平滑迁移权重的离群点；AWQ 基于二阶 Hessian 信息的逐层权重量化；SmoothQuant 基于显著权重通道缩放}{GPTQ 基于二阶 Hessian 信息的逐层权重量化；AWQ 基于显著权重通道缩放；SmoothQuant 基于激活值平滑迁移权重的离群点}{三者都属于 QAT（量化感知训练）方法}{三者都只量化权重而不量化激活值}
+\qitem{8}{在使用分布式数据并行（DDP）训练时，各节点需要对梯度进行同步。若集群有 $P$ 个 GPU 节点，梯度数据总大小为 $V$ 字节，采用环形全归约（Ring-AllReduce）算法。在每个训练步的梯度同步阶段，每个 GPU 发送的总数据量为}{}
+\fourchoices{$V$ 字节}{$\dfrac{2(P-1)V}{P}$ 字节}{$\dfrac{(P-1)V}{P}$ 字节}{$2PV$ 字节}
 
-\qitem{9}{大模型中 Activation 比 Weight 更难量化的根本原因\textbf{最准确}的描述是}{}
-\fourchoices{激活值的数值范围比权重大，但分布更均匀}{激活值在少数通道上存在显著的离群点（Outlier），导致整体量化误差被少数通道主导}{激活值的数量比权重多，量化开销大}{激活值只出现在推理时，权重出现在训练时}
+\qitem{9}{在大模型预训练的初始阶段，学习率通常需要经历一个温热启动（Warm-up）阶段（即从 0 渐进增加到设定的最大学习率 $\eta_{max}$），其核心数学与物理机理是}{}
+\fourchoices{随机初始化的权重导致早期梯度极不稳定，较小的学习率可以避免模型在训练初期发散}{增加前期梯度的绝对方差，使得模型更容易跳出局部最优解}{限制前期权重更新的 L2 范数，等效于引入强力的权重衰减（Weight Decay）}{缓解数据分布不均匀导致的早期过拟合}
 
-\qitem{10}{关于 Speculative Decoding（推测解码）的"草稿模型—验证模型"机制，下列数学结论\textbf{正确}的是}{}
-\fourchoices{接受率越高，最终生成分布越偏离目标大模型}{草稿模型 $q$ 与目标模型 $p$ 不一致时，被接受的 token 服从 $p$ 的分布，被拒绝时无修正机制}{草稿模型 $q$ 与目标模型 $p$ 不一致时，通过拒绝采样与重新归一化，最终输出严格服从 $p$ 的分布}{Speculative Decoding 只能加速 Greedy Search，不能加速 Top-p 采样}
+\qitem{10}{对于一个标准的自回归 Decoder-only Transformer 模型（不使用激活重计算），在单步训练中，反向传播（Backward Pass）阶段所需的计算量（FLOPs）理论上大约是前向传播（Forward Pass）阶段的}{}
+\fourchoices{1 倍}{1.5 倍}{2 倍}{3 倍}
 
-\qitem{11}{FlashAttention V1/V2 通过 Tiling（分块）与 Recomputation（重计算）显著降低了 HBM 读写量。设序列长度 $N$，头维度 $d$，SRAM 大小 $M$。关于其 IO 复杂度，下列\textbf{正确}的是}{}
-\fourchoices{$O(N^2)$，与标准注意力相同}{$O(N^2 d^2 / M)$，相比标准注意力的 $O(N^2 + Nd)$ 在长序列时显著降低}{$O(N d)$，远低于标准注意力}{$O(N^2 d / M)$，与序列长度线性相关}
+\qitem{11}{在人类反馈强化学习（RLHF）的 PPO 阶段，为了防止策略模型 $\pi_\theta$ 偏离初始的 SFT 模型 $\pi_{SFT}$ 太远导致"奖励作弊（Reward Hacking）"，通常会在奖励函数中引入 KL 散度惩罚。若原始奖励模型输出为 $R(x, y)$，惩罚系数为 $\beta > 0$，则经 KL 惩罚修正后的实际奖励值 $R_{modified}$ 表达式为}{}
+\fourchoices{$R(x, y) - \beta \log \dfrac{\pi_{SFT}(y|x)}{\pi_\theta(y|x)}$}{$R(x, y) - \beta \log \dfrac{\pi_\theta(y|x)}{\pi_{SFT}(y|x)}$}{$R(x, y) + \beta \left( \pi_\theta(y|x) - \pi_{SFT}(y|x) \right)$}{$R(x, y) \cdot e^{-\beta D_{KL}(\pi_\theta \| \pi_{SFT})}$}
 
-\qitem{12}{下列关于 Tensor Parallelism（TP）、Pipeline Parallelism（PP）、Sequence Parallelism（SP）在\textbf{推理场景}下的应用，\textbf{错误}的是}{}
-\fourchoices{TP 主要通过切分 Attention 与 MLP 的权重矩阵降低单卡显存与计算压力}{PP 在推理时主要瓶颈是 Bubble 空闲与跨 stage 通信延迟，在低并发推理下效率较低}{SP 主要用于切分 LayerNorm/Dropout 等非张量并行层的激活，降低长序列下激活显存}{TP 通常在所有层（含 LayerNorm、Embedding、LM Head）都做切分，不存在复制层}
+\qitem{12}{在 FP16 混合精度训练中，引入"动态损失缩放"（Dynamic Loss Scaling）机制是为了解决以下哪个数值计算瓶颈？}{}
+\fourchoices{模型权重值过大导致溢出（Overflow）}{梯度数值太小，超出 FP16 的下限表示范围，导致数值下溢（Underflow）归零}{激活值在前向传播中由于矩阵乘法不断累加而造成的数值爆炸}{AdamW 优化器在一阶、二阶动量状态更新时的数值溢出}
 
 % ============ 二、填空题 ============
 \examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
 
-\qitem{13}{设 Self-Attention 序列长度为 $n$，隐藏维度为 $d$，则前向计算 $QK^{\top}$ 的时间复杂度为 \blank{2.5cm}，空间复杂度（即注意力分数矩阵所需显存）为 \blank{2.5cm}。}{}
+\qitem{13}{设某大模型训练任务的全局批大小（Global Batch Size）设为 1024。当前分配了 32 张 GPU 进行数据并行（DP）训练，若每张 GPU 因显存限制最大只能容纳微批大小（Micro-batch Size）为 4，则需要设置的梯度累积步数（Gradient Accumulation Steps）为 \blank{2cm}。}{}
 
-\qitem{14}{设模型层数 $L=32$，注意力头数 $h=32$，每头维度 $d_h=128$，采用 MHA 与 fp16 存储。对于一条长度为 $n=4096$ 的请求，其完整 KV Cache 占用显存为 \blank{3.5cm} 字节（用 $2^{k}$ 形式表示）。}{}
+\qitem{14}{某大模型拥有 $\Phi = 7 \times 10^9$（7B）参数。若使用 BF16 混合精度，并采用 AdamW 优化器（每个参数额外维护 FP32 版本的 Master Weight、一阶动量和二阶动量），在不考虑激活值、梯度和通信缓存的前提下，仅存储模型状态（Model States）本身所需的显存大小至少为 \blank{3cm} GB。（注：结果保留为整数，$1\text{ GB} = 10^9\text{ 字节}$）}{}
 
-\qitem{15}{在 GQA 中，若模型有 $h=40$ 个 Query 头，KV 头数 $h_{\mathrm{KV}}=8$，则每个 KV 头被 \blank{2cm} 个 Query 头共享；当 $h_{\mathrm{KV}}=$ \blank{2cm} 时，GQA 退化为 MQA。}{}
+\qitem{15}{在 Megatron-LM 序列并行（Sequence Parallelism, SP）中，LayerNorm 和 Dropout 的激活值在序列长度维度 $S$ 上被切分。设张量并行大小为 $t$，Batch 大小为 $B$，隐藏维度为 $D$。在单层 Transformer 的前向传播中，由于引入序列并行，每个 GPU 在 SP 相关的通信中（All-Gather 和 Reduce-Scatter 各一次）需要通信的元素（Element）总数为 \blank{4cm}（用 $S, B, D, t$ 表示）。}{}
 
-\qitem{16}{在 Top-p (Nucleus) 采样中，设当前步 logits 经 softmax 后概率分布为 $\{(w_i, p_i)\}_{i=1}^{V}$，且 $p_i$ 已按降序排列。则核集 $V_p$ 定义为 \blank{6.5cm}；之后从该集合中按归一化概率 \blank{3.5cm} 进行采样。}{}
+\qitem{16}{在 RLHF 偏好对齐中，若词表大小仅为 2（即只有 A, B 两个 Token），对于某特定 Prompt $x$，SFT 模型输出分布为 $\pi_{SFT}(A|x) = 0.5,\ \pi_{SFT}(B|x) = 0.5$；经过 PPO 训练后的策略模型分布为 $\pi_{\theta}(A|x) = 0.8,\ \pi_{\theta}(B|x) = 0.2$。则当前单步所产生的 KL 散度值 $D_{KL}(\pi_{\theta} \| \pi_{SFT})$ 为 \blank{2.5cm}。（取 $\ln 2 \approx 0.69,\ \ln 5 \approx 1.61$，结果保留两位小数）}{}
 
-\qitem{17}{RoPE 对位置 $m$ 的 query/key 向量 $\mathbf{x}\in\mathbb{R}^{2d}$ 的旋转作用可以写成块对角矩阵 $R_m=$ \blank{6cm}，使得 $\langle R_m \mathbf{q}, R_n \mathbf{k}\rangle$ 仅依赖于相对位置 \blank{2cm}。}{}
+\qitem{17}{在因果语言模型（Causal Language Model）自回归预训练中，为了实现单次前向传播同时计算整个序列所有位置的 Loss，需要引入因果掩码（Causal Mask）。对于位置为 $i$ 的 Query 和位置为 $j$ 的 Key，当 $i < j$ 时，注意力得分矩阵（Attention Score）在 Softmax 之前需要被加上 \blank{3cm}。}{}
 
-\qitem{18}{在 Speculative Decoding 中，设草稿模型一次提议 $k$ 个 token，每个 token 的接受概率独立为 $\alpha$，则期望接受的 token 数为 \blank{3cm}；若目标是在每轮解码中稳定得到 2 个有效 token，则需要 $\alpha \geq $ \blank{2.5cm}（取 $k=4$，结果保留两位小数）。}{}
+\qitem{18}{假设在一张单卡上训练某一模型时，其吞吐量为 $T$ tokens/s。现在使用 $N$ 张卡构建 DDP 集群进行分布式训练，由于节点间梯度同步通信导致了效率损耗，测得集群的弱扩展效率（Weak Scaling Efficiency）为 $90\%$。则该集群的整体实际训练吞吐量公式为 \blank{4cm}。}{}
 
 % ============ 三、解答题 ============
 \examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
 
 \qitem{19}{（本小题满分 10 分）}{}
-\noindent 设有一个 $L$ 层 Transformer 解码器进行自回归生成。已知：序列长度 $n$，隐藏维度 $d$，注意力头数 $h$，每头维度 $d_h=d/h$，使用 fp16 存储。
+\noindent 在大模型预训练中，"训练算力估算"是系统规划的核心。设一个 Decoder-only 架构的 Transformer 模型，其非嵌入层参数量为 $N$，隐藏维度为 $h$，前向传播中每个 Token 平均经历的操作可以近似简化为矩阵乘法（GEMM）。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 推导在\textbf{不使用} KV Cache 时，生成第 $n+1$ 个 token 所需的注意力浮点运算量（FLOPs）与 KV 矩阵构造所需的 FLOPs；（4 分）
-  \item 推导在\textbf{使用} KV Cache 时，生成第 $n+1$ 个 token 所需的注意力 FLOPs，并据此说明 KV Cache 将每步复杂度从 $O(n^2 d)$ 降到 $O(nd)$ 的数学原因；（4 分）
-  \item 写出单条请求 KV Cache 的显存占用公式，并解释"显存带宽瓶颈"在 Decode 阶段为何尤其突出。（2 分）
+  \item 试从矩阵乘法的维度和乘加操作（MAC）的角度，推导证明：对单个 Token 进行前向传播所需的计算量大约为 $2N$ FLOPs；（4 分）
+  \item 说明在训练阶段，为什么单步（一次 Forward 和一次 Backward）所需的总计算量大约为 $6N$ FLOPs/token；（4 分）
+  \item 现有一款拥有 70B（$70 \times 10^9$）参数的模型，准备在含有 2T（$2 \times 10^{12}$）Tokens 的数据集上进行预训练。若使用一个 A100 GPU 集群进行训练，假设在混合精度和算子优化下，每张卡实际达到的训练吞吐算力（MFU）平均为 150 TFLOPs/s（$150 \times 10^{12}$ FLOPs/s），估算该预训练任务在 256 张 A100 上需要运行多少天？（2 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{3}
 
 \needspace{6cm}
 \qitem{20}{（本小题满分 10 分）}{}
-\noindent RoPE 对位置 $m$ 的向量 $\mathbf{x}=[x_0,x_1,\dots,x_{d-1}]^{\top}\in\mathbb{R}^{d}$（$d$ 为偶数）的变换可写为：对每一对 $(x_{2i}, x_{2i+1})$，
+\noindent DPO（Direct Preference Optimization）算法通过巧妙的数学变换，直接在偏好数据上优化语言模型，避免了 RLHF 中复杂的强化学习循环。在标准 RLHF 的对齐目标中，我们希望求解以下受约束的优化问题：
 \[
-\begin{pmatrix} x'_{2i} \\ x'_{2i+1} \end{pmatrix}
-=
-\begin{pmatrix} \cos(m\theta_i) & -\sin(m\theta_i) \\ \sin(m\theta_i) & \cos(m\theta_i) \end{pmatrix}
-\begin{pmatrix} x_{2i} \\ x_{2i+1} \end{pmatrix},
-\quad \theta_i = 10000^{-2i/d},\;i=0,1,\dots,\tfrac{d}{2}-1.
+\max_{\pi} \mathbb{E}_{x, y \sim \pi} [R(x, y)] - \beta D_{KL}(\pi(y|x) \parallel \pi_{ref}(y|x))
 \]
+其中 $\pi_{ref}$ 是 SFT 模型，$\pi$ 为待优化的策略模型，$R(x, y)$ 是学到的奖励函数，$\beta$ 是控制偏离度的常数。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 设 query 在位置 $m$，key 在位置 $n$，写出 $\langle R_m \mathbf{q}, R_n \mathbf{k}\rangle$ 的展开形式，并证明其仅依赖于相对位置 $m-n$；（5 分）
-  \item 解释 RoPE 相对于绝对位置编码在长度外推（Length Extrapolation）上的优势，并说明 NTK-aware scaling 修改 $\theta_i$ 的方式及其直觉。（5 分）
+  \item 试证明：上述受约束优化问题的闭式最优解（Optimal Policy）具有如下形式：
+  \[
+  \pi^*(y|x) = \frac{1}{Z(x)} \pi_{ref}(y|x) \exp\left( \frac{R(x, y)}{\beta} \right)
+  \]
+  其中 $Z(x) = \sum_{y} \pi_{ref}(y|x) \exp\left( \frac{R(x, y)}{\beta} \right)$ 是归一化配分函数；（5 分）
+  \item 结合 Bradley-Terry 偏好模型，即人类偏好 $y_w$ 优于 $y_l$ 的概率满足：$P(y_w \succ y_l \mid x) = \sigma(R(x, y_w) - R(x, y_l))$，利用（1）中的最优解关系，推导消去隐式奖励函数 $R(x, y)$，从而给出 DPO 损失函数的数学形式。（5 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{5}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
-\noindent 标准 Self-Attention 在硬件实现中受限于 HBM 带宽：需要将 $S,P\in\mathbb{R}^{n\times n}$ 写回 HBM 再读取。FlashAttention 通过 Tiling 与 Recomputation 改写了这一过程。
+\noindent ZeRO（Zero Redundancy Optimizer）通过消除传统数据并行（DP）中的冗余状态，极大降低了单卡显存开销。设模型参数量为 $\Phi$，分布式数据并行大小（即 GPU 数量）为 $N_d$。使用 BF16 混合精度和 AdamW 优化器，不考虑激活值。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 写出标准注意力中 $S=QK^{\top}$、$P=\mathrm{softmax}(S)$、$O=PV$ 的 HBM 读写次数与数据量；（3 分）
-  \item 详细描述 FlashAttention 的 Tiling 策略：如何将 $Q,K,V$ 分块加载到 SRAM，如何用 running statistic（$m, \ell$）增量计算 softmax，并写出更新公式；（5 分）
-  \item 解释 Recomputation 在反向传播中为何能"以算代存"，并据此说明 FlashAttention 反向 IO 复杂度仍保持 $O(N^2 d^2/M)$ 的原因。（2 分）
+  \item 写出在标准 DP（未应用 ZeRO）、ZeRO-1、ZeRO-2、ZeRO-3 下，每个 GPU 存储模型状态（参数、梯度、优化器状态）所需的显存大小（用 $\Phi$ 和 $N_d$ 表示的函数，单位：字节）；（4 分）
+  \item 分析通信开销：标准 DP 每一训练步通过 All-Reduce 进行梯度同步，通信量（每个 GPU 移入/移出数据量）为 $2\Phi$ 参数个元素。请详细说明 ZeRO-3 在前向传播（Forward）和反向传播（Backward）中是如何通过集体通信更新和释放权重的，并证明其单步总通信量为标准 DP 的 1.5 倍。（6 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{3}
 
 \needspace{6cm}
 \qitem{22}{（本小题满分 10 分）}{}
-\noindent SmoothQuant 针对大模型激活值存在通道方向离群点（Channel-wise Outliers）导致量化困难的问题，提出了一种数学等价变换。设原线性层为 $\mathbf{Y} = (\mathbf{X}\mathbf{W})$，其中 $\mathbf{X}\in\mathbb{R}^{n\times d_{\text{in}}}$，$\mathbf{W}\in\mathbb{R}^{d_{\text{in}}\times d_{\text{out}}}$。
+\noindent 在优化器设计中，AdamW（Decoupled Weight Decay）相比传统的 Adam + L2 正则化在训练大模型时具有更好的泛化性能。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 写出 SmoothQuant 引入的对角缩放矩阵 $S=\mathrm{diag}(s_1,\dots,s_{d_{\text{in}}})$，并推导等价变换 $\mathbf{Y} = (\mathbf{X}S)(S^{-1}\mathbf{W})$ 的正确性；（4 分）
-  \item 给出 $s_j$ 的取值公式（设激活值通道 $j$ 的最大绝对值为 $c_j$，权重列 $j$ 的最大绝对值为 $w_j$，迁移强度 $\alpha\in(0,1]$），并解释 $\alpha=0$ 与 $\alpha=1$ 的物理含义；（3 分）
-  \item 论述为什么该变换能将"难量化的激活值"转化为"易量化的激活值"，而权重侧仍能保持较高量化精度。（3 分）
+  \item 设当前步梯度为 $g_t$，一阶动量为 $m_t$，二阶动量为 $v_t$，学习率为 $\eta_t$，权重衰减系数为 $\lambda$。分别写出 Adam 结合 L2 正则化（即把 $\frac{\lambda}{2} \|\theta\|_2^2$ 显式加进 Loss 中）以及 AdamW 在第 $t$ 步的参数更新方程；（4 分）
+  \item 结合上述更新方程，从数学上推导并阐述：为什么在 Adam 优化器中，传统的 L2 正则化机制不能等效于 SGD 中的权重衰减（Weight Decay）？而 AdamW 是如何纠正这一偏差的？（6 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{5}
 
 \needspace{6cm}
 \qitem{23}{（本小题满分 10 分）}{}
-\noindent Speculative Decoding 通过一个小的"草稿模型"$q_\theta$ 一次性生成 $k$ 个候选 token $\tilde{x}_1,\dots,\tilde{x}_k$，再由目标大模型 $p_\phi$ 并行验证。
+\noindent 在大规模大模型训练中，通常需要将张量并行（TP）、流水线并行（PP）和数据并行（DP）结合，形成"3D 混合并行"。现有一个包含 $G = 32$ 张 GPU 的高带宽互联集群，计划进行 3D 并行配置。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 写出第 $i$ 个候选 token 的接受概率 $r_i$ 表达式（用 $p_\phi$ 与 $q_\theta$ 的概率表示），并写出当 $r_i<1$ 时被拒绝后的修正采样分布；（4 分）
-  \item \textbf{证明}：经过上述接受/拒绝过程后，最终输出的 token 严格服从 $p_\phi$ 的分布，即推导 $P(\text{output}=x) = p_\phi(x)$；（4 分）
-  \item 设草稿模型与目标模型每步延迟分别为 $t_d$、$t_v$（验证 $k$ 个 token 的延迟与单步相当），接受率 $\alpha$。推导加速比 $S(k)$ 的表达式，并讨论 $k$ 的最优选择原则。（2 分）
+  \item 给出 3D 并行的配置约束等式。若设置张量并行大小为 $t = 4$，流水线并行大小为 $p = 4$，则数据并行大小 $d$ 应为多少？（2 分）
+  \item 为了兼顾通信效率，GPU 分配应当考虑物理拓扑（如单机内 8 卡通过 NVLink 高速互联，机间通过低带宽 InfiniBand 互联）。若有 4 台单机 8 卡物理节点（共 32 卡），GPU 物理编号为 0 到 31。请给出一套合理的 GPU 并行组划分方案，使 TP 组内通信全部限制在物理单机内部，并列出编号为 0 的 GPU 所在的 TP 组、PP 组和 DP 组包含的所有 GPU 编号；（4 分）
+  \item 简述 3D 并行中，为何通常将张量并行限制在单机内部，而流水线并行和数据并行可以跨机布置？（4 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{3}
 
 \needspace{6cm}
-\qitem{24}{（本小题满分 10 分，压轴）}{}
-\noindent 某 LLM 推理服务部署在单卡 A100-80GB 上，模型为 70B 参数量（fp16），同时承担在线对话（请求长度差异大，平均 2k tokens，峰值 32k tokens）与离线长文档摘要（128k tokens）两类负载。系统观察到：（a）长 Prefill 请求会导致在线 Decode 请求的 P99 延迟毛刺；（b）并发数提升后 GPU SM 占用率仅 45\%；（c）128k 摘要任务因 OOM 频繁失败。
+\qitem{24}{（本小题满分 10 分，压轴题）}{}
+\noindent 长文本（Long Context）训练是当前大模型的核心竞争点之一。环形注意力（Ring Attention）通过在环形拓扑的 GPU 链上切分并循环传递 Key-Value 块，成功突破了单卡处理超长序列的内存墙。设待训练的序列长度为 $S$，隐藏维度为 $D$，注意力头数为 $H$。我们使用由 $N_{ring}$ 张 GPU 组成的环形通信拓扑。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 分析现象（a）的根因，并说明 Chunked Prefill 是如何缓解该问题的（包括 chunk 大小选择、调度器与 Continuous Batching 的协同机制）；（3 分）
-  \item 分析现象（b）的根因，列出至少 3 项可能的优化方向，并说明每项为何能提升 SM 占用率；（3 分）
-  \item 针对现象（c），设计一套包含"PagedAttention + KV Cache Offloading + Prefix Caching"的混合方案，画出/描述数据流并量化预期收益（显存/吞吐）。要求给出量化计算过程。（4 分）
+  \item 详细描述 Ring Attention 的并行工作原理和数据流向：如何通过非阻塞对等通信（Non-blocking P2P Send/Recv），将局部计算与 KV 块的传输进行重叠（Overlap），从而实现无全局 A-matrix（即无 $S \times S$ 完整注意力矩阵）显存驻留的因果注意力计算；（4 分）
+  \item 设 $S = 1{,}048{,}576$（1M），$D = 8192$，$H = 64$。若不采用 FlashAttention 也不做任何分块，直接在单张卡上计算并存储单层的 Softmax 注意力分数矩阵，假设每个元素使用 FP32（4 字节）存储，计算单层单头注意力矩阵所需的理论显存大小。这说明了什么问题？（3 分）
+  \item 结合 FlashAttention（在 SRAM 中完成局部块的 Softmax 和加权累加），推导说明在使用 Ring Attention 后，每张 GPU 在计算注意力时，其显存中与注意力计算相关的核心激活值显存占用（Q、K、V 激活值）的复杂度成功降低到了 $O\left( \frac{S}{N_{ring}} \cdot D \right)$。若 $N_{ring} = 32$，分析该配置下每张卡的最大文本处理上限能达到怎样的规模？（3 分）
 \end{enumerate}
 
 \answerlines{12}
@@ -224,7 +223,7 @@
 \newpage
 \begin{center}
 {\zihao{2}\heiti 参考答案与解析}\\[0.3cm]
-{\small 命题：大模型推理与部署课程组 \quad 校对：教研组}
+{\small 命题：大模型训练与并行计算课程组 \quad 校对：教研组}
 \end{center}
 \vspace{0.3cm}
 \noindent\rule{\linewidth}{0.6pt}
@@ -234,260 +233,232 @@
 \begin{multicols}{4}
 \begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*,itemsep=0.1em,parsep=0pt,topsep=0pt]
   \item B
+  \item B
+  \item A
+  \item A
+  \item C
+  \item D
+  \item A
+  \item B
+  \item A
   \item C
   \item B
-  \item D
   \item B
-  \item D
-  \item B
-  \item B
-  \item B
-  \item C
-  \item B
-  \item D
 \end{enumerate}
 \end{multicols}
 
 \vspace{0.3cm}
-\noindent\textbf{1. B}\quad 注意力计算 $QK^{\top}$ 形状为 $n\times n$，每元素代价 $d$，故为 $O(n^2 d)$；再乘 $V$ 同阶。A 是单层 attention 头内复杂度；C 是线性层复杂度；D 是 $n,d$ 同阶时的极端估计。
+\noindent\textbf{1. B}\quad 在混合精度训练中：模型权重（FP16/BF16）$2\Phi$ 字节；梯度（FP16/BF16）$2\Phi$ 字节；AdamW 优化器状态包含 FP32 的 Master Weight（$4\Phi$）、一阶动量 $m$（$4\Phi$）、二阶动量 $v$（$4\Phi$），共 $12\Phi$ 字节。模型状态总显存为 $2\Phi+2\Phi+12\Phi=16\Phi$ 字节。故选 B。
 
-\noindent\textbf{2. C}\quad Decode 阶段每步若不缓存 KV，需要重新计算历史所有 token 的 $K,V$，复杂度 $O(n^2 d)$；缓存后只需 $q\cdot K$ 与 $\mathrm{softmax}\cdot V$，复杂度 $O(nd)$。
+\noindent\textbf{2. B}\quad Chinchilla Scaling Law 证明，在算力增加时，参数量 $N$ 和数据集 Token 数 $D$ 应当以大致相等的比例缩放（即 $N\propto C^{0.5}$，$D\propto C^{0.5}$）。旧的 Kaplan 定律认为参数量增长应快于数据量（$N\propto C^{0.73}$），Chinchilla 修正了这一结论。故选 B。
 
-\noindent\textbf{3. B}\quad 单步 Decode 需要读取全部 KV Cache：MHA=$2Lh d_h\cdot2$ 字节，GQA=$2Lh_{\mathrm{KV}}d_h\cdot2$ 字节，MQA=$2L\cdot1\cdot d_h\cdot2$ 字节。MHA(8\,MB级) $>$ GQA $>$ MQA，三者显存与读取量同序。
+\noindent\textbf{3. A}\quad 在 1F1B 流水线并行中，前向气泡和反向气泡集中在首尾。一个 Step 中流水线气泡部分等效于 $P-1$ 个微批的前向和反向传播时间，非气泡有效计算时间为 $M(F+B)$。总运行时间为 $(M+P-1)(F+B)$，气泡率为 $\dfrac{P-1}{M+P-1}$。故选 A。
 
-\noindent\textbf{4. D}\quad RoPE 仅是在 Q、K 上做旋转矩阵乘法，复杂度仍为 $O(nd)$；它不改变注意力的 $O(n^2 d)$ 复杂度结构。A、B、C 均为正确描述。
+\noindent\textbf{4. A}\quad 标准 Megatron 张量并行中：自注意力块在 $O$ 矩阵行切分时需要 1 次 All-Reduce；MLP 块第二层行切分结束时需要 1 次 All-Reduce。单层前向传播共需 2 次 All-Reduce。故选 A。
 
-\noindent\textbf{5. B}\quad Prefill 阶段一次处理长 prompt，每 token 计算量 $O(nd)$，算术强度高 → Compute-bound；Decode 阶段每步只处理 1 个 token，但需读取全部 KV Cache，算术强度低 → Memory-bound。
+\noindent\textbf{5. C}\quad 丢弃 75\% 的激活值意味着反向传播时需对这 75\% 部分重新进行一次前向计算以恢复激活值，额外引入的时间开销约为 $0.75 T_f$。故选 C。
 
-\noindent\textbf{6. D}\quad PagedAttention 以固定大小 Block（如 16 token）组织 KV Cache，消除内部/外部碎片与预分配浪费；它并不直接优化算子融合效率。
+\noindent\textbf{6. D}\quad ZeRO 解决的是模型状态（Model States）的冗余存储问题，不对激活值做物理维度的切分。长文本导致的 OOM 主要由激活值过大引起，通常依靠序列并行（SP）、FlashAttention 或环形注意力（Ring Attention）解决。故选 D。
 
-\noindent\textbf{7. B}\quad Continuous Batching（又称 Iteration-level Batching）以 token 为单位调度，请求完成后立即让出位置给新请求；In-flight Batching 是 NVIDIA TensorRT-LLM 中的实现名称，包含 Continuous Batching + 多模态/多请求 in-flight 优化，并非完全等价。
+\noindent\textbf{7. A}\quad DPO 通过对 RLHF 的闭式解求反函数，推导出的损失函数为：
+\[
+\mathcal{L}_{DPO}(\theta;\pi_{ref})=-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)}\right)\right]
+\]
+该损失使模型提高偏好样本 $y_w$ 概率的同时降低非偏好样本 $y_l$ 的概率，并以 $\pi_{ref}$ 作为隐式 KL 散度约束。故选 A。
 
-\noindent\textbf{8. B}\quad GPTQ 基于 Hessian 二阶信息逐列量化权重；AWQ 通过识别显著权重通道并按缩放因子等效转移量化难度；SmoothQuant 通过 $S$ 矩阵将激活离群点平滑到权重侧。三者均为 PTQ。
+\noindent\textbf{8. B}\quad Ring-AllReduce 包含 Scatter-Reduce 与 All-Gather 两个阶段，每阶段每个节点传送 $P-1$ 次大小为 $V/P$ 的数据包。每个 GPU 总发送数据量为 $2\times(P-1)\times\dfrac{V}{P}=\dfrac{2(P-1)V}{P}$ 字节。故选 B。
 
-\noindent\textbf{9. B}\quad 激活值在少数通道（通常占 0.1\%~1\%）出现远大于其它通道的离群点（如 30x），若用 per-tensor 量化，整体 scale 被离群点拉大，正常通道精度损失严重。
+\noindent\textbf{9. A}\quad 训练初期模型权重随机初始化，输出分布混乱，交叉熵损失梯度可能非常大且方向多变。若一开始就使用较大的 $\eta_{\max}$，容易在最初几个 Step 摧毁合理的权重初始化，导致梯度爆炸或数值溢出而训练发散。Warm-up 通过较小步长让模型逐渐适应数据分布，使梯度稳定。故选 A。
 
-\noindent\textbf{10. C}\quad Speculative Decoding 通过拒绝采样：以 $\min(1, p/q)$ 接受草稿 token；若拒绝，则按 $(p-q)^+$ 归一化后重新采样。可以严格证明输出分布等于 $p$，对 Greedy 与 Top-p 均有效。
+\noindent\textbf{10. C}\quad 前向传播执行一次矩阵乘法 $Y=XW$（$2MND$ FLOPs）。反向传播需执行两次同等规模的矩阵乘法：关于输入激活值的梯度 $\dfrac{\partial L}{\partial X}=\dfrac{\partial L}{\partial Y}W^{\top}$，以及关于权重的梯度 $\dfrac{\partial L}{\partial W}=X^{\top}\dfrac{\partial L}{\partial Y}$。因此反向是前向的 2 倍，总训练步为 3 倍。故选 C。
 
-\noindent\textbf{11. B}\quad FlashAttention IO 复杂度为 $O(N^2 d^2 / M)$，其中 $M$ 为 SRAM 大小。当 $M$ 较大时可显著低于标准注意力的 $O(N^2 + N d)$ HBM 访问量。
+\noindent\textbf{11. B}\quad KL 散度 $D_{KL}(\pi_\theta\parallel\pi_{SFT})=\mathbb{E}_{y\sim\pi_\theta}\!\left[\log\dfrac{\pi_\theta(y|x)}{\pi_{SFT}(y|x)}\right]$。在 PPO 目标中希望最大化修正后的奖励并减去 KL 惩罚：$\text{Objective}=R(x,y)-\beta\log\dfrac{\pi_\theta(y|x)}{\pi_{SFT}(y|x)}$，超出 $\pi_{SFT}$ 分布越多的 token 惩罚越大，从而保持输出自然度。故选 B。
 
-\noindent\textbf{12. D}\quad TP \textbf{不}切分 LayerNorm、RMSNorm 等层（这些层在 TP 中被复制在每个 rank 上）；Embedding/LM Head 可按词表维度切分。因此"所有层都做切分"是错误的。
+\noindent\textbf{12. B}\quad FP16 数值表示范围很窄（最小正非零正常数约 $6.10\times10^{-5}$）。训练深层网络时许多梯度绝对值常落在 $[10^{-8},10^{-5}]$，直接使用 FP16 会因低于精度下限被截断为 0（数值下溢）。动态损失缩放在前向计算完 Loss 后乘以大因子 $S$（如 65536），使反向梯度放大到 FP16 可表示范围，最后更新权重前再除以 $S$。故选 B。
 
 \subsection*{\heiti 二、填空题答案}
 
-\noindent\textbf{13.}\quad $O(n^2 d)$\quad ；\quad $O(n^2)$（注意力分数矩阵 $n\times n$）。
+\noindent\textbf{13.}\quad $8$\quad 全局批大小满足 $\text{Global Batch Size}=\text{GPU 数量}\times\text{微批大小}\times\text{梯度累积步数}$，代入 $1024=32\times4\times\text{Steps}$，得 $\text{Steps}=8$。
 
-\noindent\textbf{14.}\quad 单条请求 KV Cache 大小 $=2\cdot L \cdot n \cdot h \cdot d_h \cdot 2\,\text{B} = 2\times 32\times 4096\times 32\times 128\times 2 = 2^{36}$ 字节 $=64$ GB。
+\noindent\textbf{14.}\quad $112$\quad 由第 1 题知每个参数占用模型状态显存 16 字节，7B 模型最小模型状态显存 $M=7\times10^{9}\times16=112\times10^{9}$ 字节 $=112$ GB。
 
-\noindent\textbf{15.}\quad $h/h_{\mathrm{KV}}=40/8=5$\quad ；\quad $h_{\mathrm{KV}}=1$ 时 GQA 退化为 MQA。
+\noindent\textbf{15.}\quad $2\dfrac{t-1}{t}SBD$\quad LN/Dropout 后通过 All-Gather 拼接序列，传输 $\dfrac{t-1}{t}SBD$ 元素；自注意力输出后通过 Reduce-Scatter 切分回各 GPU，同样传输 $\dfrac{t-1}{t}SBD$ 元素，累计 $2\dfrac{t-1}{t}SBD$。
 
-\noindent\textbf{16.}\quad $V_p=\min\left\{k\,\big|\,\sum_{i=1}^{k}p_i\geq p\right\}$（即累积概率首次达到 $p$ 的最小前缀集合）\quad ；\quad $p_i / \sum_{w_j\in V_p}p_j$。
+\noindent\textbf{16.}\quad $0.19$\quad $D_{KL}=0.8\ln\dfrac{0.8}{0.5}+0.2\ln\dfrac{0.2}{0.5}=0.8\ln(1.6)+0.2\ln(0.4)\approx0.8\times0.4700+0.2\times(-0.9163)=0.376-0.183\approx0.19$。
 
-\noindent\textbf{17.}\quad $R_m=\mathrm{diag}\!\left(\begin{pmatrix}\cos m\theta_0&-\sin m\theta_0\\\sin m\theta_0&\cos m\theta_0\end{pmatrix},\dots,\begin{pmatrix}\cos m\theta_{d/2-1}&-\sin m\theta_{d/2-1}\\\sin m\theta_{d/2-1}&\cos m\theta_{d/2-1}\end{pmatrix}\right)$\quad ；\quad $m-n$。
+\noindent\textbf{17.}\quad $-\infty$（或 $-10^9$ 等极小负数）\quad 当 $i<j$ 时，Query 处于当前 Token 之前，自回归预测不能看到未来 Token，故在 Softmax 前将该注意力得分加 $-\infty$，使其 Softmax 后权重严格为 0。
 
-\noindent\textbf{18.}\quad 期望接受数 $= \sum_{i=1}^{k}\alpha^{i} = \alpha\frac{1-\alpha^k}{1-\alpha}$（或独立近似下 $k\alpha$）\quad ；\quad 由 $2 \approx 4\alpha$ 得 $\alpha \approx 0.50$；若按几何级数 $\alpha(1-\alpha^4)/(1-\alpha)\geq 2$，解得 $\alpha\gtrsim 0.54$，取 $\boxed{\alpha\geq 0.54}$。
+\noindent\textbf{18.}\quad $0.9NT$\quad 弱扩展效率为实际总吞吐量与单卡无损理想吞吐量的比例，效率为 $90\%$ 且有 $N$ 张卡时，$\text{Throughput}=N\cdot T\cdot 90\%=0.9NT$。
 
 \subsection*{\heiti 三、解答题答案}
 
-\subsubsection*{19. KV Cache 必要性推导（10 分）}
+\subsubsection*{19. 训练算力估算（10 分）}
 
-\noindent\textbf{(1) 不使用 KV Cache 时（4 分）}
+\noindent\textbf{(1) 前向传播计算量约为 $2N$ FLOPs（4 分）}
 
-生成第 $n+1$ 个 token，需要重新计算前 $n+1$ 个位置的 $K,V$：
-\[
-K = X_{1:n+1} W_K,\quad V = X_{1:n+1} W_V,\quad X\in\mathbb{R}^{(n+1)\times d}.
-\]
-两矩阵乘法 FLOPs 各为 $2(n+1)\cdot d\cdot d = 2(n+1)d^2$，合计 $4(n+1)d^2$。注意力计算
-\[
-S=QK^{\top}\in\mathbb{R}^{(n+1)\times(n+1)},\quad O=\mathrm{softmax}(S)V
-\]
-的 FLOPs 为 $2(n+1)^2 d + 2(n+1)^2 d = 4(n+1)^2 d$。因此单步总 FLOPs $\approx O(n^2 d + nd^2)$，对长序列 $n\gg d$ 时主导项为 $O(n^2 d)$。
-
-\noindent\textbf{(2) 使用 KV Cache 时（4 分）}
-
-只需计算第 $n+1$ 个位置的 $q_{n+1}=x_{n+1}W_Q$，FLOPs 为 $2d^2$；而 $K,V$ 已缓存，只需读取。注意力计算：
-\[
-s = q_{n+1} K^{\top}\in\mathbb{R}^{1\times n},\quad o=\mathrm{softmax}(s)V\in\mathbb{R}^{1\times d}.
-\]
-FLOPs $= 2nd + 2nd = 4nd$，即 $O(nd)$。相比 (1) 中的 $O(n^2 d)$，下降了 $n$ 倍。这是 KV Cache 的核心价值：把"对全部历史 token 重复算 $K,V$"换成"只算当前 $q$"，把二次项降为一次项。
-
-\noindent\textbf{(3) 显存公式与带宽瓶颈（2 分）}
-
-单条请求 KV Cache 显存：
-\[
-M_{\text{KV}} = 2 \text{ (K+V)}\times L\times n\times h\times d_h \times \text{bytes\_per\_scalar}.
-\]
-Decode 阶段每步 FLOPs 仅 $O(nd)$，但要读取 $O(L\cdot n\cdot h\cdot d_h)$ 字节 KV Cache，算术强度（FLOPs/Byte）约为 $1/d_h\sim 1/128$，远低于 GPU 的 Roofline 转折点（如 A100 约 100 FLOPs/Byte），因此 Decode 是\textbf{Memory-bound}，显存带宽成为瓶颈。
-
-\subsubsection*{20. RoPE 数学推导（10 分）}
-
-\noindent\textbf{(1) 内积仅依赖相对位置（5 分）}
-
-对每一对维度 $(2i, 2i+1)$，记 $q_i=(q_{2i}, q_{2i+1})^{\top}$，$k_i$ 同理。则
-\[
-\langle R_m q, R_n k\rangle = \sum_{i=0}^{d/2-1} q_i^{\top} R_{m,i}^{\top} R_{n,i} k_i.
-\]
-注意到 $R_{m,i}^{\top} R_{n,i} = R_{n-m,\,i}$（旋转矩阵的群性质：旋转角相减），即
-\[
-R_{m,i}^{\top} R_{n,i} = \begin{pmatrix} \cos((n-m)\theta_i) & -\sin((n-m)\theta_i) \\ \sin((n-m)\theta_i) & \cos((n-m)\theta_i) \end{pmatrix} = R_{n-m,\,i}.
-\]
-因此
-\[
-\langle R_m q, R_n k\rangle = \sum_i q_i^{\top} R_{n-m,\,i}\, k_i,
-\]
-只依赖 $m-n$（注意 $n-m$ 与 $m-n$ 仅符号之差，cos 偶函数/sin 奇函数）。这表明 RoPE 把"绝对位置编码"转化为"相对位置编码"，无需在 attention 中显式注入位置偏置。
-
-\noindent\textbf{(2) 长度外推优势与 NTK-aware scaling（5 分）}
-
-绝对位置编码训练到 $L_{\text{train}}$ 后，超出该长度时模型从未见过该位置的编码，外推性能急剧下降。RoPE 的相对性意味着只要相对距离的分布在训练范围内，模型即可处理；但 $m\theta_i$ 在 $m>L_{\text{train}}$ 时仍超出训练时的 $\theta$ 周期，故直接外推也有损失。
-
-NTK-aware scaling 修改频率基底：
-\[
-\theta_i' = \mathrm{base}^{-2i/d} \cdot \left(\frac{L_{\text{train}}}{L_{\text{train}}}\right)^{-2i/d}\cdot s^{-2i/d},\quad s=\frac{L_{\text{new}}}{L_{\text{train}}}.
-\]
-直觉：高频分量（小 $i$）几乎不缩放，保持训练时的精细相对位置感知；低频分量（大 $i$）按 $s$ 缩放，使其周期被拉长到新长度 $L_{\text{new}}$。这等价于"在频率空间做插值"，比线性位置插值（PI）保留更多高频信息。
-
-\subsubsection*{21. FlashAttention 原理（10 分）}
-
-\noindent\textbf{(1) 标准注意力的 HBM 访问（3 分）}
-
-记 $Q,K,V\in\mathbb{R}^{n\times d}$，$S,P,O\in\mathbb{R}^{n\times n}$。标准实现：
+单层 Transformer 中主要计算集中在各种投影矩阵上，设隐藏维度为 $h$：
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item 读 $Q,K$：$2nd$ 字节；写 $S$：$n^2$ 字节；
-  \item 读 $S$ 计算 $\mathrm{softmax}$：$n^2$ 字节；写 $P$：$n^2$ 字节；
-  \item 读 $P,V$：$n^2+nd$ 字节；写 $O$：$nd$ 字节。
+  \item 注意力 $Q,K,V$ 投影矩阵大小均为 $[h,h]$，共 $3h^2$ 参数，对应 $3h^2$ MACs；输出投影 $O$ 矩阵 $[h,h]$，对应 $h^2$ MACs。
+  \item MLP 模块门控版本包含两个升维投影（$h\to 4h$）和一个降维投影（$4h\to h$），参数量约 $2(h\times4h)+(4h\times h)=12h^2$（非门控版本为 $8h^2$），对应 $12h^2$ MACs。
+  \item 1 次 MAC = 1 次乘法 + 1 次加法 = 2 FLOPs。
 \end{itemize}
-总 HBM 访问 $\approx O(n^2 + nd)$，且当 $n\gg d$ 时由 $n^2$ 项主导，远高于 $O(nd)$ 的算术下界。
+汇总单层非嵌入参数量 $N_{\text{layer}}\approx 12h^2$，对应 $12h^2$ MACs $=24h^2$ FLOPs $=2N_{\text{layer}}$ FLOPs。推广至 $L$ 层全模型，单 Token 前向计算量约为 $2N$ FLOPs。（证明毕）
 
-\noindent\textbf{(2) Tiling 与 running softmax（5 分）}
+\noindent\textbf{(2) 训练单步约为 $6N$ FLOPs/token（4 分）}
 
-设 SRAM 大小 $M$，取 block size $B_r = \Theta(M/d)$（行块），$B_c=\Theta(M/d)$（列块）。将 $Q$ 按 $B_r$ 分块 $Q_1,\dots,Q_{T_r}$；$K,V$ 按 $B_c$ 分块 $K_1,\dots,K_{T_c}$。
-
-对每个 $Q_i$ 块，依次载入 $K_j, V_j$ 到 SRAM，计算局部 $S_{ij}=Q_i K_j^{\top}$（在 SRAM 内完成 softmax），更新输出 $O_i$。关键在于 softmax 分母需要全局 $\max$ 与 $\sum$，故采用 running statistic：
-\begin{align*}
-m_{ij}^{\text{new}} &= \max(m_i^{\text{old}},\, \mathrm{rowmax}(S_{ij})),\\
-\ell_{ij}^{\text{new}} &= e^{m_i^{\text{old}}-m_{ij}^{\text{new}}}\ell_i^{\text{old}} + \mathrm{rowsum}\!\left(e^{S_{ij}-m_{ij}^{\text{new}}}\right),\\
-\tilde{O}_{ij}^{\text{new}} &= e^{m_i^{\text{old}}-m_{ij}^{\text{new}}}\tilde{O}_i^{\text{old}} + e^{S_{ij}-m_{ij}^{\text{new}}} V_j.
-\end{align*}
-最终 $O_i = \tilde{O}_i / \ell_i$。所有 $S,P$ 中间量\textbf{从不写回 HBM}，仅 $O$ 写回。HBM 访问次数：$Q$ 每块被 $T_c$ 次访问，$K,V$ 每块被 $T_r$ 次访问，总 $\approx O(N^2 d^2/M)$。
-
-\noindent\textbf{(3) Recomputation 与反向 IO（2 分）}
-
-反向传播时，FlashAttention \textbf{不存储} $S,P$，而是在反向时重新分块计算 $S_{ij}=Q_i K_j^{\top}$。代价：额外 $O(N^2 d)$ FLOPs（相对前向的 $O(N^2 d)$ 增加一倍），但 HBM 访问仍为 $O(N^2 d^2/M)$，避免存储 $N^2$ 大小的中间矩阵。在 HBM 带宽受限的现代 GPU 上，这是"以算代存"的典型优化。
-
-\subsubsection*{22. SmoothQuant 等价变换（10 分）}
-
-\noindent\textbf{(1) 等价性推导（4 分）}
-
-设 $S=\mathrm{diag}(s_1,\dots,s_{d_{\text{in}}})$ 为可逆对角矩阵。则
-\[
-\mathbf{X}\mathbf{W} = \mathbf{X}\,\underbrace{S S^{-1}}_{=\,I}\,\mathbf{W} = (\mathbf{X}S)(S^{-1}\mathbf{W}).
-\]
-令 $\widehat{\mathbf{X}}=\mathbf{X}S$，$\widehat{\mathbf{W}}=S^{-1}\mathbf{W}$，则 $\mathbf{Y}=\widehat{\mathbf{X}}\widehat{\mathbf{W}}$，运算结果在浮点误差范围内严格相等。
-
-\noindent\textbf{(2) $s_j$ 的取值与 $\alpha$ 含义（3 分）}
-
-设 $c_j=\max|\mathbf{X}_{:,j}|$（激活通道 $j$ 的最大绝对值），$w_j=\max|\mathbf{W}_{j,:}|$（权重行 $j$ 的最大绝对值）。SmoothQuant 取
-\[
-s_j = \frac{c_j^{\alpha}}{w_j^{1-\alpha}},\quad \alpha\in[0,1].
-\]
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item $\alpha=0$：$s_j=1/w_j$，等价于只对权重做缩放，激活不变；
-  \item $\alpha=1$：$s_j=c_j$，把激活的离群点完全迁移到权重侧，激活变得"平坦"。
+  \item 前向传播：$2N$ FLOPs/token。
+  \item 反向传播需计算两部分梯度：关于上一层激活值的梯度（与前向同规模，$2N$ FLOPs/token），关于该层参数权重的梯度（与前向同规模，$2N$ FLOPs/token），合计 $4N$ FLOPs/token。
 \end{itemize}
-实践中 $\alpha\approx 0.5$（如 OPT-175B 用 0.5）能取得激活与权重精度之间的平衡。
+单步总计算量 $=$ Forward $+$ Backward $=2N+4N=6N$ FLOPs/token。（证明毕）
 
-\noindent\textbf{(3) 离群点迁移机理（3 分）}
+\noindent\textbf{(3) 训练天数估算（2 分）}
 
-变换后 $\widehat{\mathbf{X}}_{:,j} = s_j \mathbf{X}_{:,j}$，方差变为 $s_j^2 \cdot \mathrm{Var}(\mathbf{X}_{:,j})$。由于 $s_j\propto c_j^{\alpha}/w_j^{1-\alpha}$，离群通道（$c_j$ 大）被 $s_j$ 缩小（当 $\alpha<1$），从而压低离群点幅度；权重侧 $\widehat{\mathbf{W}}_{j,:}=\mathbf{W}_{j,:}/s_j$ 被相应放大，但权重分布本就较平坦（无离群点），放大后仍落在量化可表示范围内。这种"把难度从激活转移到权重"的等价变换让两侧都能用 INT8 高精度量化，从而支持 W8A8 全量化推理。
-
-\subsubsection*{23. Speculative Decoding 数学保证（10 分）}
-
-\noindent\textbf{(1) 接受/拒绝规则（4 分）}
-
-对第 $i$ 个候选 token $\tilde{x}_i$，设目标模型分布 $p=p_\phi(\cdot\mid x_{<i})$，草稿模型分布 $q=q_\theta(\cdot\mid x_{<i})$。接受概率
+总训练计算量：
 \[
-r_i = \min\!\left(1,\;\frac{p(\tilde{x}_i)}{q(\tilde{x}_i)}\right).
+C_{\text{total}}=6\times N\times D=6\times(70\times10^{9})\times(2\times10^{12})=8.4\times10^{23}\text{ FLOPs}.
 \]
-以概率 $r_i$ 接受 $\tilde{x}_i$；若拒绝，则按修正分布
+单张 A100 每日吞吐：$150\times10^{12}\times86400=1.296\times10^{19}$ FLOPs/day。256 张 A100 每日总吞吐：$256\times1.296\times10^{19}\approx3.318\times10^{21}$ FLOPs/day。
 \[
-p_{\text{resample}}(x) = \frac{\max(0,\, p(x)-q(x))}{\sum_{x'} \max(0,\, p(x')-q(x'))}
+\text{Days}=\frac{8.4\times10^{23}}{3.318\times10^{21}}\approx253.2\text{ 天}.
 \]
-重新采样一个 token，并停止本轮验证。
+在 256 张 A100 上大约需要运行 253 天。
 
-\noindent\textbf{(2) 输出分布等于 $p$ 的证明（4 分）}
+\subsubsection*{20. DPO 数学推导（10 分）}
 
-只需证明 $P(\text{output}=x)=p(x)$。考虑单个位置：
-\begin{align*}
-P(\text{output}=x) &= \underbrace{P(\text{accept } x)}_{\text{草稿提出 }x\text{ 且接受}} + \underbrace{P(\text{reject and resample }x)}_{\text{拒绝某 token 后采样到 }x}\\
-&= q(x)\cdot\min\!\left(1,\frac{p(x)}{q(x)}\right) + \sum_{x'} q(x')\!\left(1-\min\!\left(1,\frac{p(x')}{q(x')}\right)\right)\cdot p_{\text{resample}}(x)\\
-&= \min(q(x), p(x)) + \left[\sum_{x'}\!\big(q(x')-p(x')\big)^{+}\right]\cdot p_{\text{resample}}(x).
-\end{align*}
-注意到 $\sum_{x'}(q(x')-p(x'))^{+} = \sum_{x'}(p(x')-q(x'))^{+}=:Z$（因 $\sum q=\sum p=1$），且 $p_{\text{resample}}(x)=(p(x)-q(x))^{+}/Z$。代入：
+\noindent\textbf{(1) 闭式最优解（5 分）}
+
+优化目标为 $\max_{\pi}\sum_{y}\pi(y|x)R(x,y)-\beta\sum_{y}\pi(y|x)\log\dfrac{\pi(y|x)}{\pi_{ref}(y|x)}$，约束 $\sum_{y}\pi(y|x)=1$。重写为：
 \[
-P(\text{output}=x) = \min(q(x),p(x)) + (p(x)-q(x))^{+} = p(x).
+\max_{\pi}\beta\sum_{y}\pi(y|x)\!\left[\log\!\left(\exp\!\left(\frac{R(x,y)}{\beta}\right)\pi_{ref}(y|x)\right)-\log\pi(y|x)\right].
 \]
-即证。该结论对任意分布 $p$（含 Top-p 截断后的分布）成立。
-
-\noindent\textbf{(3) 加速比与 $k$ 的选择（2 分）}
-
-单轮 Speculative Decoding 总延迟 $\approx t_d + t_v$（草稿 $k$ 步 + 验证 1 步）；期望产出 $\mathbb{E}[\text{tokens}]=\alpha(1-\alpha^k)/(1-\alpha)$。加速比
+定义合法概率分布 $\pi^*(y|x)=\dfrac{1}{Z(x)}\pi_{ref}(y|x)\exp\!\left(\dfrac{R(x,y)}{\beta}\right)$，其中 $Z(x)=\sum_{y}\pi_{ref}(y|x)\exp\!\left(\dfrac{R(x,y)}{\beta}\right)$，则 $\pi_{ref}(y|x)\exp\!\left(\dfrac{R(x,y)}{\beta}\right)=Z(x)\pi^*(y|x)$，代回：
 \[
-S(k) = \frac{\mathbb{E}[\text{tokens}]\cdot t_v}{t_d+t_v} = \frac{\alpha(1-\alpha^k)}{(1-\alpha)}\cdot\frac{t_v}{t_d+t_v}.
+\max_{\pi}\beta\log Z(x)\underbrace{\sum_{y}\pi(y|x)}_{=1}-\beta\sum_{y}\pi(y|x)\log\frac{\pi(y|x)}{\pi^*(y|x)}
+=\beta\log Z(x)-\beta D_{KL}(\pi(y|x)\parallel\pi^*(y|x)).
 \]
-$k$ 选择原则：$k$ 增大 → 期望 token 增多但草稿延迟线性增加；最优 $k^\ast$ 满足 $\partial S/\partial k=0$，即 $\alpha^k(-\ln\alpha)(t_d+t_v) \approx t_v\cdot\alpha^k\cdot$（边际产出等于边际成本）。工程上常根据在线 Acceptance Rate 动态调整 $k\in\{2,3,4,8\}$。
+由于 $\beta\log Z(x)$ 与 $\pi$ 无关且 $D_{KL}(\pi\parallel\pi^*)\ge 0$，最大化当且仅当 KL 散度为 0，即 $\pi(y|x)=\pi^*(y|x)=\dfrac{1}{Z(x)}\pi_{ref}(y|x)\exp\!\left(\dfrac{R(x,y)}{\beta}\right)$。（证明毕）
 
-\subsubsection*{24. 压轴题：系统级综合优化（10 分）}
+\noindent\textbf{(2) DPO 损失推导（5 分）}
 
-\noindent\textbf{(1) Chunked Prefill 缓解延迟毛刺（3 分）}
+对最优解取对数：$\log\dfrac{\pi^*(y|x)}{\pi_{ref}(y|x)}=\dfrac{R(x,y)}{\beta}-\log Z(x)$，得 $R(x,y)=\beta\log\dfrac{\pi^*(y|x)}{\pi_{ref}(y|x)}+\beta\log Z(x)$。代入 Bradley-Terry 模型作差：
+\[
+R(x,y_w)-R(x,y_l)=\beta\log\frac{\pi^*(y_w|x)}{\pi_{ref}(y_w|x)}-\beta\log\frac{\pi^*(y_l|x)}{\pi_{ref}(y_l|x)},
+\]
+配分函数项 $\beta\log Z(x)$ 被完全消去。用当前策略 $\pi_\theta$ 替换 $\pi^*$：
+\[
+P(y_w\succ y_l\mid x)=\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)}\right).
+\]
+对该偏好数据集极大似然估计，负对数似然损失即 DPO 损失：
+\[
+\mathcal{L}_{DPO}(\theta)=-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)}\right)\right].
+\]
+（推导毕）
 
-\textbf{根因}：长 Prefill 请求（如 32k tokens）以单次大 batch 形式提交，GPU 需数十毫秒才能完成，期间 Decode 请求被阻塞在调度队列中，造成 P99 毛刺。这是典型的"长 Compute-bound 任务阻塞 Memory-bound 任务"问题。
+\subsubsection*{21. ZeRO 显存与通信分析（10 分）}
 
-\textbf{Chunked Prefill 方案}：将长度 $L$ 的 Prefill 切分为若干 chunk（如 512/1024 tokens），每步只处理一个 chunk，并将其与现有 Decode 请求\textbf{同 batch 调度}。具体协同：
+\noindent\textbf{(1) 各阶段单卡显存（4 分）}
+
+混合精度下权重 $2\Phi$ 字节、梯度 $2\Phi$ 字节、优化器状态 $12\Phi$ 字节。
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{Chunk 大小选择}：取使得单 chunk 计算时间 $\leq$ Decode 步调度间隔（约 10--20 ms），通常 512--2048 tokens；
-  \item \textbf{与 Continuous Batching 协同}：调度器每 iter 优先保证 Decode 请求的 KV Cache 命中，剩余预算分配给 Prefill chunk；新到达的短请求可插队；
-  \item \textbf{KV Cache 衔接}：chunk 之间共享 KV Cache，每个 chunk 的输出 $K,V$ 累加到 PagedAttention 的 block table 中。
-\end{itemize}
-预期效果：P99 毛刺从"阻塞 30 ms+"降到"恒定 5--10 ms"，吞吐基本不损失。
-
-\noindent\textbf{(2) SM 占用率低的优化方向（3 分）}
-
-\textbf{根因}：Decode 阶段 batch 内每条请求只算 1 个 token，GEMM 退化为 GEMV，计算密度低；同时不同请求长度差异导致 padding 浪费。
-
-优化方向（至少 3 项）：
-\begin{itemize}[leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item \textbf{提高并发（Max-Num-Seqs ↑）}：通过 PagedAttention 让更多请求共享同 batch，使 GEMV 变 GEMV-batch → GEMM，SM 利用率上升；
-  \item \textbf{GQA / MQA}：减少 KV Cache 读取量，让单步 Decode 从纯 Memory-bound 逐渐向 Compute-bound 靠拢，SM 持续有任务；
-  \item \textbf{Chunked Prefill 同 batch}：将 Compute-bound 的 Prefill chunk 与 Memory-bound 的 Decode 混合，平衡算术强度，SM 同时被两类任务填满；
-  \item \textbf{CUDA Graph / 算子融合}：减少 kernel launch 开销，使 SM 不被空隙浪费；融合 RMSNorm+Residual、QKV projection、Rotary+Attention 等；
-  \item \textbf{Prefix Caching}：复用 System Prompt 的 KV，减少冷启动的算子开销，让有效 batch 提高。
+  \item 标准 DP：$M_{DP}=2\Phi+2\Phi+12\Phi=16\Phi$ 字节。
+  \item ZeRO-1（仅分片优化器状态）：$M_{\text{ZeRO1}}=4\Phi+\dfrac{12\Phi}{N_d}$ 字节。
+  \item ZeRO-2（分片梯度与优化器状态）：$M_{\text{ZeRO2}}=2\Phi+\dfrac{14\Phi}{N_d}$ 字节。
+  \item ZeRO-3（分片全部模型状态）：$M_{\text{ZeRO3}}=\dfrac{16\Phi}{N_d}$ 字节。
 \end{itemize}
 
-\noindent\textbf{(3) 长文本 OOM 的混合方案（4 分）}
+\noindent\textbf{(2) ZeRO-3 通信量为标准 DP 的 1.5 倍（6 分）}
 
-设计思路：将"显存—内存—SSD"组织为三级存储，KV Cache 按热度在三级间流动。
-
-\textbf{数据流}：
-\begin{enumerate}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{PagedAttention（GPU 显存）}：只保留当前 Decode 窗口与高频请求的 KV，按 block（16 token）分页；
-  \item \textbf{KV Cache Offloading（CPU 内存）}：长上下文中"久未访问"的 block 通过 PCIe 异步 prefetch/evict 到 CPU 内存（FlexGen 思想）；
-  \item \textbf{NVMe SSD 兜底}：超长（>128k）任务的远端 block 落盘，CPU 内存作为缓存层；
-  \item \textbf{Prefix Caching}：System Prompt 与共享文档前缀在所有请求间复用，避免重复计算与存储。
-\end{enumerate}
-
-\textbf{量化收益估算}（70B 模型，$L=80$，$h=64$，$d_h=128$，fp16）：
-
-单 token KV 显存 $=2\cdot 80\cdot 64\cdot 128\cdot 2\,\text{B} \approx 2.6\,\text{MB/token}$。128k 任务总 KV $\approx 128000\times 2.6\,\text{MB}\approx 332\,\text{GB}$，远超 80 GB 单卡。
-
-采用方案后：
+ZeRO-3 通信工作流程：
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item GPU 显存仅保留近 4k token：$\approx 10\,\text{GB}$；
-  \item CPU 内存（256 GB）存放中段 100k token：$\approx 260\,\text{GB}$；
-  \item 剩余 24k token 落 NVMe：$\approx 60\,\text{GB}$；
-  \item 若 10 条并发请求共享同一 System Prompt（4k token），Prefix Caching 节省 $9\times 10\,\text{GB}=90\,\text{GB}$ 显存；
-  \item 综合后单卡可承载 128k 任务并发数从 0 提升到约 5--10，吞吐量提升 5$\times$ 以上。
+  \item 前向传播：每 GPU 只保存 $\dfrac{1}{N_d}$ 权重，计算到某层时发起 All-Gather 收集完整权重，计算后立即释放。整网前向共进行一次全模型权重 All-Gather，通信量 $\Phi$。
+  \item 反向传播：再次 All-Gather 收集该层权重（通信量 $\Phi$），计算梯度后释放；算出的完整梯度通过 Reduce-Scatter 归约并分片存储（通信量 $\Phi$），随后释放非本分片梯度。
 \end{itemize}
-关键瓶颈在于 PCIe 带宽（A100 PCIe 4.0 $\approx 64\,\text{GB/s}$ 单向），需配合预取（lookahead）与异步流（CUDA stream）掩盖传输延迟，使 Decode 计算与 KV 拷贝重叠。
+通信量对比：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item 标准 DP：反向结束时一次 All-Reduce，等价于 Reduce-Scatter + All-Gather，总通信量 $C_{DP}=2\Phi$。
+  \item ZeRO-3：前向 All-Gather（$\Phi$）+ 反向 All-Gather（$\Phi$）+ 反向 Reduce-Scatter（$\Phi$），总通信量 $C_{\text{ZeRO3}}=3\Phi$。
+  \item 比例：$\dfrac{C_{\text{ZeRO3}}}{C_{DP}}=\dfrac{3\Phi}{2\Phi}=1.5$。
+\end{itemize}
+即 ZeRO-3 单步总通信量为标准 DP 的 1.5 倍。（证明毕）
+
+\subsubsection*{22. AdamW 与 L2 正则化（10 分）}
+
+\noindent\textbf{(1) 更新方程（4 分）}
+
+\textbf{Adam 结合 L2 正则化}：损失 $\tilde{\mathcal{L}}(\theta)=\mathcal{L}(\theta)+\dfrac{\lambda}{2}\|\theta\|_2^2$，梯度 $\tilde{g}_t=\nabla_\theta\mathcal{L}(\theta_t)+\lambda\theta_t$。
+\[
+m_t=\beta_1 m_{t-1}+(1-\beta_1)\tilde{g}_t,\quad v_t=\beta_2 v_{t-1}+(1-\beta_2)\tilde{g}_t^2,
+\]
+\[
+\hat{m}_t=\frac{m_t}{1-\beta_1^t},\quad\hat{v}_t=\frac{v_t}{1-\beta_2^t},\quad\theta_{t+1}=\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\hat{m}_t.
+\]
+\textbf{AdamW}：梯度 $g_t=\nabla_\theta\mathcal{L}(\theta_t)$（不含正则项），一、二阶动量用 $g_t$ 更新（公式同上），最后将权重衰减独立出来：
+\[
+\theta_{t+1}=\theta_t-\eta_t\lambda\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\hat{m}_t.
+\]
+
+\noindent\textbf{(2) 推导与原理解释（6 分）}
+
+在 SGD 中引入 L2 正则：$\theta_{t+1}=\theta_t-\eta_t(g_t+\lambda\theta_t)=(1-\eta_t\lambda)\theta_t-\eta_t g_t$，与直接权重衰减数学上完全等价。
+
+但在 Adam 中，梯度更新需除以二阶动量历史 $\sqrt{\hat{v}_t}$。若使用 L2 正则，代入 $\hat{m}_t$ 中的正则项同样被二阶动量缩放：
+\[
+\theta_{t+1}\approx\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\big(\nabla\mathcal{L}(\theta_t)+\lambda\theta_t\big).
+\]
+这意味着：对历史梯度大、$\sqrt{\hat{v}_t}$ 大的权重，实际权重衰减系数变为 $\dfrac{\lambda}{\sqrt{\hat{v}_t}}$，衰减强度被严重削弱；对历史梯度极小、$\sqrt{\hat{v}_t}$ 极小的权重，衰减强度反而被放大。导致权重衰减不均，正则化效果大打折扣。
+
+AdamW 的纠正：将 $\lambda\theta_t$ 从动量更新中剥离，直接置于最后更新等式中，保证无论参数历史梯度如何，每 step 的权重衰减比例都严格恒定为 $\eta_t\lambda$，不受二阶动量干扰，从而完美恢复正则化初衷，在大模型训练中表现出更佳的泛化性和数值稳定性。
+
+\subsubsection*{23. 3D 混合并行（10 分）}
+
+\noindent\textbf{(1) 配置约束与 $d$ 的取值（2 分）}
+
+3D 并行约束等式 $G=t\times p\times d$。代入 $G=32$，$t=4$，$p=4$：$32=4\times4\times d\Rightarrow 16d=32\Rightarrow d=2$。数据并行大小 $d$ 应为 2。
+
+\noindent\textbf{(2) GPU 并行组划分（4 分）}
+
+为使 TP 通信全部局限在单机内部，TP 组必须占用同一物理机器内的连续卡。4 台机器 Node 0--3 各含 8 卡，编号 0--7、8--15、16--23、24--31。因 $t=4$，每台机器容纳 $8/4=2$ 个 TP 组：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item TP 组 0：[0,1,2,3]（Node 0）；TP 组 1：[4,5,6,7]（Node 0）；依此类推。
+\end{itemize}
+GPU 0 所在并行组：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item TP 组：[0,1,2,3]。
+  \item PP 组（跨阶段连接）：[0,4,8,12]（跨机布局保证阶段间对应拓扑）。
+  \item DP 组（同阶段处理不同数据）：[0,16]。
+\end{itemize}
+
+\noindent\textbf{(3) TP 限单机、PP/DP 跨机的原因（4 分）}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item 张量并行（TP）：切分算子内部矩阵，每次前向/反向都需高频 All-Reduce（每个 Transformer 层数次），对延迟和带宽要求极高，跨机网络瓶颈会立刻导致 GPU 严重空闲，故须限制在单机内（利用机内 NVLink 吞吐）。
+  \item 流水线并行（PP）：通信只发生在 Stage 边界（传输层间边界激活值），一个 Batch 期间通信频率远低于 TP，每次数据量较小，跨机通信对整体性能影响较低。
+  \item 数据并行（DP）：通信只在反向传播结束后梯度同步阶段进行（通过 Bucket 化 All-Reduce 异步重叠），随 Batch Size 变大通信频率极低，可通过 IB 跨机网络轻松承载。
+\end{itemize}
+
+\subsubsection*{24. Ring Attention 长文本训练（10 分）}
+
+\noindent\textbf{(1) 工作原理与数据流（4 分）}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item \textbf{空间切分}：将长度 $S$ 的输入序列在序列维度切分为 $N_{ring}$ 等份，每张 GPU 仅保留 $S_{\text{chunk}}=\dfrac{S}{N_{ring}}$ 的 $Q,K,V$ 块。
+  \item \textbf{环形通信与局部计算重叠}：GPU $i$ 先计算本地 $Q_i$ 与本地 $K_i$ 的注意力并累加 $V_i$；同时启动非阻塞 P2P 发送，将当前 $K_i,V_i$ 发给环中下一个 GPU $i+1$，并从前一个 GPU $i-1$ 异步接收 $K,V$；传输的同时 GPU $i$ 用本地 $Q_i$ 与已接收的旧 $K,V$ 继续注意力计算。该过程循环 $N_{ring}-1$ 次，直至所有 $Q$ 与全网 $K,V$ 完成计算。
+  \item \textbf{无全局矩阵驻留}：分块层面计算，GPU 只需在本地 SRAM 中计算局部 Softmax 和局部加权和，从不在任何 GPU 的 HBM 中实例化完整 $S\times S$ 注意力矩阵，规避长文本训练显存爆炸问题。
+\end{itemize}
+
+\noindent\textbf{(2) 单卡显存开销（3 分）}
+
+单层单头 Softmax 注意力矩阵大小 $S\times S=1{,}048{,}576\times1{,}048{,}576$ 元素，元素总数 $S^2\approx1.10\times10^{12}$。FP32 每元素 4 字节：
+\[
+\text{Memory}=1.10\times10^{12}\times4\approx4.4\times10^{12}\text{ 字节}\approx4400\text{ GB}=4.4\text{ TB}.
+\]
+单卡不分块直接计算存储 1M 长度注意力矩阵需高达 4.4 TB 显存，远超当前单张 A100（80GB）容量，说明不进行分块和并行切分的长文本注意力计算在物理上完全无法实现。
+
+\noindent\textbf{(3) 复杂度与处理上限（3 分）}
+
+在 FlashAttention 与 Ring Attention 结合下，每张 GPU 仅持有长度 $\dfrac{S}{N_{ring}}$ 的序列片段。HBM 常驻激活值仅包含：本地 $Q$ 块（$\dfrac{S}{N_{ring}}\times D$）、当前计算与接收中的 $K,V$ 双缓冲（$2\times\dfrac{S}{N_{ring}}\times D$）、最终输出 $O$（$\dfrac{S}{N_{ring}}\times D$）。核心激活值显存复杂度被压缩到 $O\!\left(\dfrac{S}{N_{ring}}\cdot D\right)$ 的线性级别。
+
+若 $N_{ring}=32$，处理 $S=1\text{M}$ 文本时每张 GPU 等效本地长度 $S_{\text{chunk}}=\dfrac{10^6}{32}\approx31250$。考虑 $D=8192$，这部分常驻激活值显存仅在数 GB 级别（相比 4.4 TB 降低几个数量级）。在 A100-80GB 留有 40GB 激活值预算下，得益于 $O\!\left(\dfrac{S}{N_{ring}}\cdot D\right)$ 的线性扩展性，32 卡集群理论极限处理长度可轻松突破 2M 至 4M 的极长文本规模。
 
 \end{document}
