@@ -1,0 +1,595 @@
+% !TEX program = xelatex
+% 严格遵循「高考试卷排版风v1.0.1」Skill 规范
+% 变更记录（相对 v1.0.0）：
+%   - 页眉底部双线 → 单线（Skill: border_bottom: "single"）
+\documentclass[a4paper]{ctexart}
+
+% ========== 宏包 ==========
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{lastpage}
+\usepackage{array,booktabs}
+
+% ========== 英文字体：Times New Roman ==========
+\setmainfont{Times New Roman}
+\setsansfont{Times New Roman}
+\setmonofont{Courier New}
+
+% ========== 中文字体：Mac 原生宋体/黑体 ==========
+\setCJKmainfont{Songti SC}[BoldFont=Heiti SC]
+\setCJKsansfont{Heiti SC}
+\setCJKmonofont{Songti SC}
+
+% ========== 页面设置 ==========
+% 上1.7cm / 下2.2cm / 左3.0cm / 右3.0cm（Skill 规范）
+\geometry{
+    a4paper,
+    left=3.0cm,
+    right=3.0cm,
+    top=1.7cm,
+    bottom=2.2cm,
+    headheight=14pt,
+    headsep=0.35cm,
+    footskip=0.8cm
+}
+
+% ========== 字号宏（严格按 Skill 规范）==========
+% title: 18pt / subtitle: 14pt / body: 12pt / header_footer: 9pt
+\newcommand{\titlefont}{\fontsize{18pt}{24pt}\selectfont}
+\newcommand{\subtitlefont}{\fontsize{14pt}{20pt}\selectfont}
+\newcommand{\bodyfont}{\fontsize{12pt}{16pt}\selectfont}
+\newcommand{\headerfont}{\fontsize{9pt}{12pt}\selectfont}
+
+% ========== 行距：1.3倍（Skill 要求）==========
+\setstretch{1.3}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.2em}
+\setlist{nolistsep,leftmargin=2em,itemsep=0.1em,parsep=0pt,topsep=0.1em}
+
+% ========== 页眉页脚设置 ==========
+% 页眉：底部单线（Skill v1.0.1: border_bottom: "single"）
+% 页眉左：试卷名；右：无（页码在页脚）
+% 页脚：顶部单线，右侧"第X页"
+\pagestyle{fancy}
+\fancyhf{}
+% ---- 页眉（单线）----
+\fancyhead[L]{\headerfont\songti 大模型训练与并行计算期末试卷}
+\fancyhead[R]{}  % 页眉不含页码
+\renewcommand{\headrulewidth}{0.8pt}   % 单线（v1.0.1）
+% ---- 页脚 ----
+\fancyfoot[R]{\headerfont\songti 第 \thepage\ 页}
+\renewcommand{\footrulewidth}{0.5pt}  % 页脚顶部单线
+
+% ========== 注意事项双线宏 ==========
+% 仅"注意事项："标签加粗（黑体），内容不加粗（宋体），内部首行缩进2em
+\newcommand{\noticeblock}[1]{%
+  \vspace{0.3em}%
+  \noindent\rule{\linewidth}{0.8pt}%
+  \vspace{0.3em}%
+  \noindent{\heiti\bfseries 注意事项：}\\%
+  \vspace{0.1em}%
+  \songti #1%
+  \vspace{0.3em}%
+  \noindent\rule{\linewidth}{0.8pt}%
+  \vspace{0.5em}%
+}
+
+% ========== 正文 ==========
+\begin{document}
+\bodyfont   % 默认正文 12pt
+
+% ==================== 标题区 ====================
+\begin{center}
+\vspace*{-0.5em}
+% 主标题：黑体 18pt
+{\titlefont\heiti\bfseries 大模型训练与并行计算期末试卷}\\[0.4em]
+% 副标题：宋体 14pt
+{\subtitlefont\songti 满分 150 分 \quad 考试时间 150 分钟}\\[0.3em]
+
+\end{center}
+\vspace{0.3em}
+
+% ==================== 注意事项（上下双线包围） ====================
+\noticeblock{%
+  \begin{enumerate}[leftmargin=2.5em,itemsep=0pt,topsep=2pt,parsep=0pt]
+    \item 本试卷共三大题，包括选择题、填空题、解答题，共 24 小题。
+    \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
+    \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
+    \item 本试卷中如无特殊说明，模型参数量记为 $\Phi$，隐藏维度记为 $h$，序列长度记为 $s$，批大小记为 $b$，GPU 数量记为 $P$，混合精度训练默认使用 fp16/bf16 存储模型权重与梯度，\\优化器状态使用 fp32 存储。
+  \end{enumerate}
+}
+
+\vspace{0.5em}
+
+% ==================== 一、选择题 ====================
+% 大题标题及括号描述整体加粗（Skill 要求）
+{\bodyfont\heiti\bfseries 一、选择题%
+{\bodyfont\songti\bfseries （本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。）}}
+
+\vspace{0.5em}
+
+% --- 1 ---
+\noindent\textbf{1.} 在大模型混合精度（Mixed-Precision）训练中，使用 AdamW 优化器并维护 FP32 版本的 Master Weights。对于参数量为 $\Phi$ 的模型，仅存储模型参数、梯度和优化器状态（不含激活值与通信缓存），每个参数平均需要占用的显存大小为
+
+\noindent\hspace{1em}(A) $12\Phi$ 字节 \quad (B) $16\Phi$ 字节 \quad (C) $18\Phi$ 字节 \quad (D) $20\Phi$ 字节
+
+\vspace{0.5em}
+
+% --- 2 ---
+\noindent\textbf{2.} 根据 Chinchilla Scaling Law（Hoffmann 等人提出的缩放定律），在给定计算量预算 $C$（单位：FLOPs）下，模型参数量 $N$ 与训练 Token 数 $D$ 的最优分配比例应满足 $C \approx 6ND$。当算力预算增加到原来的 $k$ 倍时，为了达到最优训练效果，模型参数量 $N$ 和训练数据量 $D$ 的理论增长比例大约为
+
+\noindent\hspace{1em}(A) $N$ 增长 $k^{0.73}$ 倍，$D$ 增长 $k^{0.27}$ 倍 \\
+\noindent\hspace{1em}(B) $N$ 增长 $k^{0.5}$ 倍，$D$ 增长 $k^{0.5}$ 倍 \\
+\noindent\hspace{1em}(C) $N$ 增长 $k^{0.3}$ 倍，$D$ 增长 $k^{0.7}$ 倍 \\
+\noindent\hspace{1em}(D) $N$ 增长 $k$ 倍，$D$ 保持不变
+
+\vspace{0.5em}
+
+% --- 3 ---
+\noindent\textbf{3.} 在流水线并行（Pipeline Parallelism）中，采用 1F1B（One Forward, One Backward）调度策略。设流水线阶段数为 $P$，一个 Batch 内被切分成的微批数量为 $M$（满足 $M \ge P$）。若单次前向传播时间为 $F$，单次反向传播时间为 $B$，则在一个完整的训练步（Step）中，由于气泡导致的处理器空闲时间占总时间的比例（气泡率）为
+
+\noindent\hspace{1em}(A) $\dfrac{P-1}{M+P-1}$ \quad (B) $\dfrac{P-1}{M}$ \quad (C) $\dfrac{M-1}{M+P-1}$ \quad (D) $\dfrac{P}{M}$
+
+\vspace{0.5em}
+
+% --- 4 ---
+\noindent\textbf{4.} 在 Megatron-LM 样式的张量并行（Tensor Parallelism, TP）中，一个标准的 Transformer 层包含自注意力（Self-Attention）和多层感知机（MLP）两个子块。若 TP 的切分大小为 $t$，在单层前向传播过程中，各个 GPU 之间需要进行集体通信。如果不使用序列并行，该层前向传播总共需要执行的通信操作为
+
+\noindent\hspace{1em}(A) 2 次 All-Reduce \quad (B) 2 次 All-Gather 和 2 次 Reduce-Scatter \\
+\noindent\hspace{1em}(C) 4 次 All-Reduce \quad (D) 1 次 All-Reduce 和 1 次 All-Gather
+
+\vspace{0.5em}
+
+% --- 5 ---
+\noindent\textbf{5.} 在大模型训练中，激活重计算（Activation Checkpointing / Gradient Checkpointing）常用于以计算换显存。若对某一 Transformer 层采用选择性重计算（Selective Checkpointing）策略，丢弃其中 75\% 容易重新计算的中间激活值。设该层原本的前向传播计算时间为 $T_f$，则采用该策略后，该层在反向传播时因重计算引入的额外时间开销约为
+
+\noindent\hspace{1em}(A) $0.25 T_f$ \quad (B) $0.5 T_f$ \quad (C) $0.75 T_f$ \quad (D) $1.5 T_f$
+
+\vspace{0.5em}
+
+% --- 6 ---
+\noindent\textbf{6.} 关于 DeepSpeed 提出的 ZeRO（Zero Redundancy Optimizer）三种阶段（Stage 1/2/3）对模型状态显存的切分，下列说法\textbf{错误}的是
+
+\noindent\hspace{1em}(A) ZeRO-1 仅将优化器状态（Optimizer States）进行分片存储，不切分权重和梯度 \\
+\noindent\hspace{1em}(B) ZeRO-2 在 ZeRO-1 的基础上，进一步将梯度（Gradients）进行分片存储 \\
+\noindent\hspace{1em}(C) ZeRO-3 将优化器状态、梯度和模型权重（Weights）均进行分片存储 \\
+\noindent\hspace{1em}(D) ZeRO 各阶段通过分片存储激活值（Activations）来彻底解决超长文本训练时的 OOM 问题
+
+\vspace{0.5em}
+
+% --- 7 ---
+\noindent\textbf{7.} 直接偏好优化（Direct Preference Optimization, DPO）是近年来替代传统基于 PPO 算法的 RLHF 的重要方法。已知提示词为 $x$，人类偏好的好回答为 $y_w$，较差回答为 $y_l$，参考模型为 $\pi_{\mathrm{ref}}$，当前训练的策略模型为 $\pi_{\theta}$。DPO 损失函数（不含正则项）的形式为
+
+\noindent\hspace{1em}(A) $-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\dfrac{\pi_\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\dfrac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right]$ \\[0.8em]
+\noindent\hspace{1em}(B) $-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\dfrac{\pi_{\mathrm{ref}}(y_w|x)}{\pi_\theta(y_w|x)}-\beta\log\dfrac{\pi_{\mathrm{ref}}(y_l|x)}{\pi_\theta(y_l|x)}\right)\right]$ \\[0.8em]
+\noindent\hspace{1em}(C) $-\mathbb{E}_{(x,y_w,y_l)}\!\left[\beta\log\dfrac{\pi_\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_l|x)}-\log\sigma\!\left(\dfrac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_w|x)}\right)\right]$ \\[0.8em]
+\noindent\hspace{1em}(D) $-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\log\dfrac{\pi_\theta(y_w|x)}{\pi_\theta(y_l|x)}-\beta\log\dfrac{\pi_{\mathrm{ref}}(y_w|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right]$
+
+\vspace{0.5em}
+
+% --- 8 ---
+\noindent\textbf{8.} 在使用分布式数据并行（DDP）训练时，各节点需要对梯度进行同步。若集群有 $P$ 个 GPU 节点，梯度数据总大小为 $V$ 字节，采用环形全归约（Ring-AllReduce）算法。在每个训练步的梯度同步阶段，每个 GPU 发送的总数据量为
+
+\noindent\hspace{1em}(A) $V$ 字节 \quad (B) $\dfrac{2(P-1)V}{P}$ 字节 \quad (C) $\dfrac{(P-1)V}{P}$ 字节 \quad (D) $2PV$ 字节
+
+\vspace{0.5em}
+
+% --- 9 ---
+\noindent\textbf{9.} 在大模型预训练的初始阶段，学习率通常需要经历一个温热启动（Warm-up）阶段（即从 0 渐进增加到设定的最大学习率 $\eta_{\max}$），其核心数学与物理机理是
+
+\noindent\hspace{1em}(A) 随机初始化的权重导致早期梯度极不稳定，较小的学习率可以避免模型在训练初期发散 \\
+\noindent\hspace{1em}(B) 增加前期梯度的绝对方差，使得模型更容易跳出局部最优解 \\
+\noindent\hspace{1em}(C) 限制前期权重更新的 L2 范数，等效于引入强力的权重衰减（Weight Decay） \\
+\noindent\hspace{1em}(D) 缓解数据分布不均匀导致的早期过拟合
+
+\vspace{0.5em}
+
+% --- 10 ---
+\noindent\textbf{10.} 对于一个标准的自回归 Decoder-only Transformer 模型（不使用激活重计算），在单步训练中，反向传播（Backward Pass）阶段所需的计算量（FLOPs）理论上大约是前向传播（Forward Pass）阶段的
+
+\noindent\hspace{1em}(A) 1 倍 \quad (B) 1.5 倍 \quad (C) 2 倍 \quad (D) 3 倍
+
+\vspace{0.5em}
+
+% --- 11 ---
+\noindent\textbf{11.} 在人类反馈强化学习（RLHF）的 PPO 阶段，为了防止策略模型 $\pi_\theta$ 偏离初始的 SFT 模型 $\pi_{\mathrm{SFT}}$ 太远导致"奖励作弊（Reward Hacking）"，通常会在奖励函数中引入 KL 散度惩罚。若原始奖励模型输出为 $R(x, y)$，惩罚系数为 $\beta > 0$，则经 KL 惩罚修正后的实际奖励值 $R_{\mathrm{modified}}$ 表达式为
+
+\noindent\hspace{1em}(A) $R(x, y) - \beta\log\dfrac{\pi_{\mathrm{SFT}}(y|x)}{\pi_\theta(y|x)}$ \\
+\noindent\hspace{1em}(B) $R(x, y) - \beta\log\dfrac{\pi_\theta(y|x)}{\pi_{\mathrm{SFT}}(y|x)}$ \\
+\noindent\hspace{1em}(C) $R(x, y) + \beta\bigl(\pi_\theta(y|x) - \pi_{\mathrm{SFT}}(y|x)\bigr)$ \\
+\noindent\hspace{1em}(D) $R(x, y) \cdot e^{-\beta D_{\mathrm{KL}}(\pi_\theta \| \pi_{\mathrm{SFT}})}$
+
+\vspace{0.5em}
+
+% --- 12 ---
+\noindent\textbf{12.} 在 FP16 混合精度训练中，引入"动态损失缩放"（Dynamic Loss Scaling）机制是为了解决以下哪个数值计算瓶颈？
+
+\noindent\hspace{1em}(A) 模型权重值过大导致溢出（Overflow） \\
+\noindent\hspace{1em}(B) 梯度数值太小，超出 FP16 的下限表示范围，导致数值下溢（Underflow）归零 \\
+\noindent\hspace{1em}(C) 激活值在前向传播中由于矩阵乘法不断累加而造成的数值爆炸 \\
+\noindent\hspace{1em}(D) AdamW 优化器在一阶、二阶动量状态更新时的数值溢出
+
+\newpage
+
+% ==================== 二、填空题 ====================
+{\bodyfont\heiti\bfseries 二、填空题%
+{\bodyfont\songti\bfseries （本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。）}}
+
+\vspace{0.5em}
+
+% --- 13 ---
+\noindent\textbf{13.} 设某大模型训练任务的全局批大小（Global Batch Size）设为 1024。当前分配了 32 张 GPU 进行数据并行（DP）训练，若每张 GPU 因显存限制最大只能容纳微批大小（Micro-batch Size）为 4，则需要设置的梯度累积步数（Gradient Accumulation Steps）为 \underline{\hspace{2.5cm}}。
+
+\vspace{0.7em}
+
+% --- 14 ---
+\noindent\textbf{14.} 某大模型拥有 $\Phi = 7 \times 10^9$（7B）参数。若使用 BF16 混合精度，并采用 AdamW 优化器（每个参数额外维护 FP32 版本的 Master Weight、一阶动量和二阶动量），在不考虑激活值、梯度和通信缓存的前提下，仅存储模型状态（Model States）本身所需的显存大小至少为 \underline{\hspace{2.5cm}} GB。（注：结果保留为整数，$1~\mathrm{GB} = 10^9$ 字节）
+
+\vspace{0.7em}
+
+% --- 15 ---
+\noindent\textbf{15.} 在 Megatron-LM 序列并行（Sequence Parallelism, SP）中，LayerNorm 和 Dropout 的激活值在序列长度维度 $S$ 上被切分。设张量并行大小为 $t$，Batch 大小为 $B$，隐藏维度为 $D$。在单层 Transformer 的前向传播中，由于引入序列并行，每个 GPU 在 SP 相关的通信中（All-Gather 和 Reduce-Scatter 各一次）需要通信的元素（Element）总数为 \underline{\hspace{4.5cm}}（用 $S, B, D, t$ 表示）。
+
+\vspace{0.7em}
+
+% --- 16 ---
+\noindent\textbf{16.} 在 RLHF 偏好对齐中，若词表大小仅为 2（即只有 A, B 两个 Token），对于某特定 Prompt $x$，SFT 模型输出分布为 $\pi_{\mathrm{SFT}}(A|x) = 0.5$, $\pi_{\mathrm{SFT}}(B|x) = 0.5$；经过 PPO 训练后的策略模型分布为 $\pi_{\theta}(A|x) = 0.8$, $\pi_{\theta}(B|x) = 0.2$。则当前单步所产生的 KL 散度值 $D_{\mathrm{KL}}(\pi_{\theta} \| \pi_{\mathrm{SFT}})$ 为 \underline{\hspace{2.5cm}}。（取 $\ln 2 \approx 0.69$, $\ln 5 \approx 1.61$，结果保留两位小数）
+
+\vspace{0.7em}
+
+% --- 17 ---
+\noindent\textbf{17.} 在因果语言模型（Causal Language Model）自回归预训练中，为了实现单次前向传播同时计算整个序列所有位置的 Loss，需要引入因果掩码（Causal Mask）。对于位置为 $i$ 的 Query 和位置为 $j$ 的 Key，当 $i < j$ 时，注意力得分矩阵（Attention Score）在 Softmax 之前需要被加上 \underline{\hspace{4.5cm}}。
+
+\vspace{0.7em}
+
+% --- 18 ---
+\noindent\textbf{18.} 假设在一张单卡上训练某一模型时，其吞吐量为 $T$ tokens/s。现在使用 $N$ 张卡构建 DDP 集群进行分布式训练，由于节点间梯度同步通信导致了效率损耗，测得集群的弱扩展效率（Weak Scaling Efficiency）为 90\%。则该集群的整体实际训练吞吐量公式为 \underline{\hspace{4.5cm}}。
+
+\newpage
+
+% ==================== 三、解答题 ====================
+{\bodyfont\heiti\bfseries 三、解答题%
+{\bodyfont\songti\bfseries （本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。）}}
+
+\vspace{0.5em}
+
+% --- 19 ---
+\noindent\textbf{19.}（本小题满分 10 分）
+
+在大模型预训练中，"训练算力估算"是系统规划的核心。设一个 Decoder-only 架构的 Transformer 模型，其非嵌入层参数量为 $N$，隐藏维度为 $h$，前向传播中每个 Token 平均经历的操作可以近似简化为矩阵乘法（GEMM）。
+
+\vspace{0.3em}
+(1) 试从矩阵乘法的维度和乘加操作（MAC）的角度，推导证明：对单个 Token 进行前向传播所需的计算量大约为 $2N$ FLOPs；（4 分）
+
+\vspace{0.3em}
+(2) 说明在训练阶段，为什么单步（一次 Forward 和一次 Backward）所需的总计算量大约为 $6N$ FLOPs/token；（4 分）
+
+\vspace{0.3em}
+(3) 现有一款拥有 70B（$70 \times 10^9$）参数的模型，准备在含有 2T（$2 \times 10^{12}$）Tokens 的数据集上进行预训练。若使用一个 A100 GPU 集群进行训练，假设在混合精度和算子优化下，每张卡实际达到的训练吞吐算力（MFU）平均为 150 TFLOPs/s（$150 \times 10^{12}$ FLOPs/s），估算该预训练任务在 256 张 A100 上需要运行多少天？（2 分）
+
+\vspace{9em}
+
+% --- 20 ---
+\noindent\textbf{20.}（本小题满分 10 分）
+
+DPO（Direct Preference Optimization）算法通过巧妙的数学变换，直接在偏好数据上优化语言模型，避免了 RLHF 中复杂的强化学习循环。
+
+在标准 RLHF 的对齐目标中，我们希望求解以下受约束的优化问题：
+$$\max_{\pi}\; \mathbb{E}_{x,\,y\sim\pi}\!\bigl[R(x,y)\bigr]-\beta\,D_{\mathrm{KL}}\!\left(\pi(y|x)\;\|\;\pi_{\mathrm{ref}}(y|x)\right)$$
+其中 $\pi_{\mathrm{ref}}$ 是 SFT 模型，$\pi$ 为待优化的策略模型，$R(x,y)$ 是学到的奖励函数，$\beta$ 是控制偏离度的常数。
+
+\vspace{0.3em}
+(1) 试证明：上述受约束优化问题的闭式最优解（Optimal Policy）具有如下形式：
+$$\pi^*(y|x)=\frac{1}{Z(x)}\,\pi_{\mathrm{ref}}(y|x)\exp\!\left(\frac{R(x,y)}{\beta}\right)$$
+其中 $Z(x)=\sum_y\pi_{\mathrm{ref}}(y|x)\exp\!\left(\frac{R(x,y)}{\beta}\right)$ 是归一化配分函数；（5 分）
+
+\vspace{0.3em}
+(2) 结合 Bradley-Terry 偏好模型，即人类偏好 $y_w$ 优于 $y_l$ 的概率满足：
+$$P(y_w\succ y_l\mid x)=\sigma\!\left(R(x,y_w)-R(x,y_l)\right)$$
+利用 (1) 中的最优解关系，推导消去隐式奖励函数 $R(x,y)$，从而给出 DPO 损失函数的数学形式。（5 分）
+
+\vspace{10em}
+
+% --- 21 ---
+\noindent\textbf{21.}（本小题满分 10 分）
+
+ZeRO（Zero Redundancy Optimizer）通过消除传统数据并行（DP）中的冗余状态，极大降低了单卡显存开销。设模型参数量为 $\Phi$，分布式数据并行大小（即 GPU 数量）为 $N_d$。使用 BF16 混合精度和 AdamW 优化器，不考虑激活值。
+
+\vspace{0.3em}
+(1) 写出在标准 DP（未应用 ZeRO）、ZeRO-1、ZeRO-2、ZeRO-3 下，每个 GPU 存储模型状态（参数、梯度、优化器状态）所需的显存大小（用 $\Phi$ 和 $N_d$ 表示的函数，单位：字节）；（4 分）
+
+\vspace{0.3em}
+(2) 分析通信开销：标准 DP 每一训练步通过 All-Reduce 进行梯度同步，通信量（每个 GPU 移入/移出数据量）为 $2\Phi$ 参数个元素。请详细说明 ZeRO-3 在前向传播（Forward）和反向传播（Backward）中是如何通过集体通信更新和释放权重的，并证明其单步总通信量为标准 DP 的 1.5 倍。（6 分）
+
+\vspace{10em}
+
+\newpage
+
+% --- 22 ---
+\noindent\textbf{22.}（本小题满分 10 分）
+
+在优化器设计中，AdamW（Decoupled Weight Decay）相比传统的 Adam + L2 正则化在训练大模型时具有更好的泛化性能。
+
+\vspace{0.3em}
+(1) 设当前步梯度为 $g_t$，一阶动量为 $m_t$，二阶动量为 $v_t$，学习率为 $\eta_t$，权重衰减系数为 $\lambda$。分别写出 Adam 结合 L2 正则化（即把 $\dfrac{\lambda}{2}\|\theta\|_2^2$ 显式加进 Loss 中）以及 AdamW 在第 $t$ 步的参数更新方程；（4 分）
+
+\vspace{0.3em}
+(2) 结合上述更新方程，从数学上推导并阐述：为什么在 Adam 优化器中，传统的 L2 正则化机制不能等效于 SGD 中的权重衰减（Weight Decay）？而 AdamW 是如何纠正这一偏差的？（6 分）
+
+\vspace{10em}
+
+% --- 23 ---
+\noindent\textbf{23.}（本小题满分 10 分）
+
+在大规模大模型训练中，通常需要将张量并行（TP）、流水线并行（PP）和数据并行（DP）结合，形成"3D 混合并行"。现有一个包含 $G = 32$ 张 GPU 的高带宽互联集群，计划进行 3D 并行配置。
+
+\vspace{0.3em}
+(1) 给出 3D 并行的配置约束等式。若设置张量并行大小为 $t = 4$，流水线并行大小为 $p = 4$，则数据并行大小 $d$ 应为多少？（2 分）
+
+\vspace{0.3em}
+(2) 为了兼顾通信效率，GPU 分配应当考虑物理拓扑（如单机内 8 卡通过 NVLink 高速互联，机间通过低带宽 InfiniBand 互联）。若有 4 台单机 8 卡物理节点（共 32 卡），GPU 物理编号为 0 到 31。请给出一套合理的 GPU 并行组划分方案，使 TP 组内通信全部限制在物理单机内部，并列出编号为 0 的 GPU 所在的 TP 组、PP 组和 DP 组包含的所有 GPU 编号；（4 分）
+
+\vspace{0.3em}
+(3) 简述 3D 并行中，为何通常将张量并行限制在单机内部，而流水线并行和数据并行可以跨机布置？（4 分）
+
+\vspace{10em}
+
+% --- 24 ---
+\noindent\textbf{24.}（本小题满分 10 分，压轴题）
+
+长文本（Long Context）训练是当前大模型的核心竞争点之一。环形注意力（Ring Attention）通过在环形拓扑的 GPU 链上切分并循环传递 Key-Value 块，成功突破了单卡处理超长序列的内存墙。
+
+设待训练的序列长度为 $S$，隐藏维度为 $D$，注意力头数为 $H$。我们使用由 $N_{\mathrm{ring}}$ 张 GPU 组成的环形通信拓扑。
+
+\vspace{0.3em}
+(1) 详细描述 Ring Attention 的并行工作原理和数据流向：如何通过非阻塞对等通信（Non-blocking P2P Send/Recv），将局部计算与 KV 块的传输进行重叠（Overlap），从而实现无全局 A-matrix（即无 $S \times S$ 完整注意力矩阵）显存驻留的因果注意力计算；（4 分）
+
+\vspace{0.3em}
+(2) 设 $S = 1{,}048{,}576$（1M），$D = 8192$，$H = 64$。若不采用 FlashAttention 也不做任何分块，直接在单张卡上计算并存储单层的 Softmax 注意力分数矩阵，假设每个元素使用 FP32（4 字节）存储，计算单层单头注意力矩阵所需的理论显存大小。这说明了什么问题？（3 分）
+
+\vspace{0.3em}
+(3) 结合 FlashAttention（在 SRAM 中完成局部块的 Softmax 和加权累加），推导说明在使用 Ring Attention 后，每张 GPU 在计算注意力时，其显存中与注意力计算相关的核心激活值显存占用（Q、K、V 激活值）的复杂度成功降低到了 $O\!\left(\dfrac{S}{N_{\mathrm{ring}}}\cdot D\right)$。若 $N_{\mathrm{ring}} = 32$，分析该配置下每张卡的最大文本处理上限能达到怎样的规模？（3 分）
+
+\vspace{9em}
+
+% ============================================================
+%                  参考答案与解析（另起一页）
+% ============================================================
+\newpage
+\fancyhead[L]{\headerfont\songti 参考答案与解析}
+\fancyhead[R]{}  % 答案页页眉也不含页码
+
+\begin{center}
+\vspace*{0.2em}
+{\subtitlefont\heiti\bfseries 参考答案与解析}
+\end{center}
+\vspace{0.4em}
+
+% ===== 选择题答案速查 =====
+{\bodyfont\heiti\bfseries 一、选择题答案}
+
+\vspace{0.4em}
+\begin{center}
+\begin{tabular}{c|cccccccccccc}
+\toprule
+题号 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 \\
+\midrule
+答案 & B & B & A & A & C & D & A & B & A & C & B & B \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.8em}
+
+{\bodyfont\heiti\bfseries 选择题详细解析}
+
+\vspace{0.4em}
+
+\noindent\textbf{1.【B】} 混合精度训练各项显存：权重 FP16/BF16 占 $2\Phi$ 字节；梯度 FP16/BF16 占 $2\Phi$ 字节；AdamW 优化器状态含 FP32 Master Weight（$4\Phi$）、一阶动量 $m$（$4\Phi$）、二阶动量 $v$（$4\Phi$），共 $12\Phi$ 字节。总显存 $2\Phi+2\Phi+12\Phi=16\Phi$ 字节。
+
+\vspace{0.5em}
+
+\noindent\textbf{2.【B】} Chinchilla Scaling Law 证明，算力增加时参数量 $N$ 和数据量 $D$ 应以大致相等的比例缩放（$N\propto C^{0.5}$，$D\propto C^{0.5}$）。旧 Kaplan 定律（2020）认为 $N\propto C^{0.73}$，Chinchilla 已修正。
+
+\vspace{0.5em}
+
+\noindent\textbf{3.【A】} 1F1B 调度中气泡集中在首尾。总运行时间为 $(M+P-1)(F+B)$，气泡时间为 $(P-1)(F+B)$，故气泡率 $=\dfrac{P-1}{M+P-1}$。
+
+\vspace{0.5em}
+
+\noindent\textbf{4.【A】} Megatron TP 中：自注意力块 O 矩阵行切分需 1 次 All-Reduce；MLP 第二层行切分需 1 次 All-Reduce。单层前向共 2 次 All-Reduce。
+
+\vspace{0.5em}
+
+\noindent\textbf{5.【C】} 丢弃 75\% 激活值意味着反向传播时需对这 75\% 的部分重新进行前向传播，额外时间开销约为 $0.75 T_f$。
+
+\vspace{0.5em}
+
+\noindent\textbf{6.【D】} ZeRO 解决的是\textbf{模型状态}冗余存储，并不对激活值做物理切分。长文本 OOM 主要由激活值引起，需靠序列并行（SP）、FlashAttention 或 Ring Attention 解决。
+
+\vspace{0.5em}
+
+\noindent\textbf{7.【A】} DPO 损失由 RLHF 闭式解求反函数导出：
+$$\mathcal{L}_{\mathrm{DPO}}=-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right]$$
+以 $\pi_{\mathrm{ref}}$ 作为隐式 KL 散度约束。
+
+\vspace{0.5em}
+
+\noindent\textbf{8.【B】} Ring-AllReduce 含 Scatter-Reduce 和 All-Gather 两阶段，每阶段传 $(P-1)$ 次大小为 $V/P$ 的数据包，总发送量 $=\dfrac{2(P-1)V}{P}$ 字节。
+
+\vspace{0.5em}
+
+\noindent\textbf{9.【A】} 训练初期随机初始化权重使梯度极大且方向多变，直接用大学习率易导致发散。Warm-up 通过较小步长让模型逐步适应数据分布，使梯度稳定。
+
+\vspace{0.5em}
+
+\noindent\textbf{10.【C】} 前向传播：$Y=XW$（$2N$ FLOPs/token）。反向需两次同等规模矩阵乘：激活梯度 $\partial L/\partial X=(\partial L/\partial Y)W^{\mathsf{T}}$ 和权重梯度 $\partial L/\partial W=X^{\mathsf{T}}(\partial L/\partial Y)$，合计 $4N$ FLOPs/token，是前向的 2 倍。
+
+\vspace{0.5em}
+
+\noindent\textbf{11.【B】} PPO 目标最大化修正奖励减 KL 惩罚：$\mathrm{Obj}=R(x,y)-\beta\log\dfrac{\pi_\theta(y|x)}{\pi_{\mathrm{SFT}}(y|x)}$，故 $R_{\mathrm{modified}}=R(x,y)-\beta\log\dfrac{\pi_\theta(y|x)}{\pi_{\mathrm{SFT}}(y|x)}$。
+
+\vspace{0.5em}
+
+\noindent\textbf{12.【B】} FP16 最小正非零正常数约 $6.10\times10^{-5}$，许多梯度落在 $[10^{-8},10^{-5}]$ 被截断为 0（下溢）。动态损失缩放将 Loss 乘大因子 $S$ 放大梯度至 FP16 可表示范围，更新前再除以 $S$。
+
+\vspace{0.9em}
+
+% ===== 填空题答案 =====
+{\bodyfont\heiti\bfseries 二、填空题答案}
+
+\vspace{0.4em}
+\begin{center}
+\begin{tabular}{c|ccc}
+\toprule
+题号 & 13 & 14 & 15 \\
+\midrule
+答案 & $8$ & $112$ & $2\dfrac{t-1}{t}SBD$ \\
+\bottomrule
+\end{tabular}
+\qquad
+\begin{tabular}{c|ccc}
+\toprule
+题号 & 16 & 17 & 18 \\
+\midrule
+答案 & $0.19$ & $-\infty$ & $0.9NT$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.8em}
+
+{\bodyfont\heiti\bfseries 填空题详细解析}
+
+\vspace{0.4em}
+
+\noindent\textbf{13.【8】} 全局批大小等式：$\text{Global BS}=\text{GPU 数}\times\text{Micro BS}\times\text{Accum Steps}$。代入 $1024=32\times4\times n\Rightarrow n=8$。
+
+\vspace{0.5em}
+
+\noindent\textbf{14.【112】} 每参数模型状态显存 16 字节。$7\times10^9\times16=112\times10^9$ 字节 $=112$ GB。
+
+\vspace{0.5em}
+
+\noindent\textbf{15.【$2\dfrac{t-1}{t}SBD$】} SP 中 All-Gather 通信量为 $\dfrac{t-1}{t}SBD$，Reduce-Scatter 同样为 $\dfrac{t-1}{t}SBD$，合计 $2\dfrac{t-1}{t}SBD$。
+
+\vspace{0.5em}
+
+\noindent\textbf{16.【0.19】}
+$$D_{\mathrm{KL}}=0.8\ln\frac{0.8}{0.5}+0.2\ln\frac{0.2}{0.5}=0.8\ln 1.6+0.2\ln 0.4\approx0.8(0.47)+0.2(-0.92)\approx0.19$$
+
+\vspace{0.5em}
+
+\noindent\textbf{17.【$-\infty$（或极小负数，如 $-10^9$）】} $i<j$ 时 Query 不应看到未来位置 $j$ 的 Key，Softmax 前加 $-\infty$ 使对应注意力权重严格归零。
+
+\vspace{0.5em}
+
+\noindent\textbf{18.【$0.9NT$】} 弱扩展效率 90\% 时，实际总吞吐量 $=N\cdot T\cdot90\%=0.9NT$。
+
+\newpage
+
+% ===== 解答题解析 =====
+{\bodyfont\heiti\bfseries 三、解答题详细解析}
+
+\vspace{0.5em}
+
+\noindent\textbf{19.【解析】}
+
+\textbf{(1)} Transformer 各层参数集中于投影矩阵。单层隐藏维度 $h$：Q/K/V 投影各 $[h,h]$ 共 $3h^2$ 参数 $\Rightarrow 3h^2$ MACs；输出投影 O 贡献 $h^2$ MACs；MLP（门控）升维 $h\to4h$ 两个线性层 + 降维 $4h\to h$ 共约 $12h^2$ MACs。每 MAC 含 1 乘 1 加 $=2$ FLOPs。单层总计 $\approx24h^2$ FLOPs $=2N_{\mathrm{layer}}$ FLOPs/token。推广到全模型 $L$ 层：$\sum_l 2N_l=2N$ FLOPs/token。\quad（证毕）
+
+\vspace{0.4em}
+\textbf{(2)} 前向传播：$2N$ FLOPs/token。反向传播含两部分：(i) 激活梯度 $2N$ FLOPs/token，(ii) 权重梯度 $2N$ FLOPs/token，合计 $4N$ FLOPs/token。单步总计 $2N+4N=6N$ FLOPs/token。\quad（证毕）
+
+\vspace{0.4em}
+\textbf{(3)} 总计算量 $C=6\times70\times10^9\times2\times10^{12}=8.4\times10^{23}$ FLOPs。单张 A100 日吞吐 $150\times10^{12}\times86400\approx1.296\times10^{19}$ FLOPs/day，256 张日吞吐 $\approx3.318\times10^{21}$ FLOPs/day。所需天数 $=\dfrac{8.4\times10^{23}}{3.318\times10^{21}}\approx\boxed{253}$ 天。
+
+\vspace{0.8em}
+
+\noindent\textbf{20.【解析】}
+
+\textbf{(1)} 将目标函数改写为：
+$$\beta\sum_y\pi(y|x)\!\left[\log\!\left(\pi_{\mathrm{ref}}(y|x)e^{R(x,y)/\beta}\right)-\log\pi(y|x)\right]$$
+定义 $\pi^*(y|x)=Z(x)^{-1}\pi_{\mathrm{ref}}(y|x)e^{R(x,y)/\beta}$，其中 $Z(x)$ 为归一化配分函数，则上式化为：
+$$\beta\log Z(x)-\beta D_{\mathrm{KL}}\!\left(\pi(y|x)\;\|\;\pi^*(y|x)\right)$$
+因 $\beta\log Z(x)$ 与 $\pi$ 无关，且 $D_{\mathrm{KL}}\ge0$，目标在 $D_{\mathrm{KL}}=0$ 即 $\pi=\pi^*$ 时取最大值。\quad（证毕）
+
+\vspace{0.4em}
+\textbf{(2)} 由最优解取对数：$R(x,y)=\beta\log\dfrac{\pi^*(y|x)}{\pi_{\mathrm{ref}}(y|x)}+\beta\log Z(x)$。代入 Bradley-Terry 模型作差，$Z(x)$ 完全消去：
+$$R(x,y_w)-R(x,y_l)=\beta\log\frac{\pi^*(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\frac{\pi^*(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}$$
+用 $\pi_\theta$ 替换 $\pi^*$，对偏好数据集做最大似然估计，负对数似然即为 DPO 损失：
+$$\mathcal{L}_{\mathrm{DPO}}(\theta)=-\mathbb{E}_{(x,y_w,y_l)}\!\left[\log\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right]$$
+（推导毕）
+
+\vspace{0.8em}
+
+\noindent\textbf{21.【解析】}
+
+\textbf{(1)} 各阶段单卡显存（BF16 + AdamW，权重 $2\Phi$ 字节、梯度 $2\Phi$ 字节、优化器状态 $12\Phi$ 字节）：
+\begin{itemize}[nolistsep,leftmargin=2em,itemsep=0.25em]
+    \item 标准 DP：$M_{\mathrm{DP}}=2\Phi+2\Phi+12\Phi=16\Phi$ 字节
+    \item ZeRO-1（仅切优化器状态）：$M_1=4\Phi+\dfrac{12\Phi}{N_d}$ 字节
+    \item ZeRO-2（切梯度 + 优化器状态）：$M_2=2\Phi+\dfrac{14\Phi}{N_d}$ 字节
+    \item ZeRO-3（全部切分）：$M_3=\dfrac{16\Phi}{N_d}$ 字节
+\end{itemize}
+
+\vspace{0.4em}
+\textbf{(2)} ZeRO-3 通信流程：
+
+\textbf{前向传播}：每层计算前，GPU 发起 All-Gather 汇聚完整权重（全网通信量 $\Phi$），计算完成后立即释放额外权重。
+
+\textbf{反向传播}：每层先 All-Gather 完整权重（$\Phi$），计算梯度后通过 Reduce-Scatter 归约并按分片存储（$\Phi$），随后释放非本分片梯度。
+
+通信量对比：标准 DP 的 All-Reduce $\equiv$ Reduce-Scatter + All-Gather $=2\Phi$；ZeRO-3 $=$ 前向 All-Gather（$\Phi$）+ 反向 All-Gather（$\Phi$）+ 反向 Reduce-Scatter（$\Phi$）$=3\Phi$。比值 $\dfrac{3\Phi}{2\Phi}=\boxed{1.5}$。\quad（证毕）
+
+\newpage
+
+\noindent\textbf{22.【解析】}
+
+\textbf{(1) Adam + L2 正则化：} 引入正则后梯度 $\tilde{g}_t=\nabla\mathcal{L}(\theta_t)+\lambda\theta_t$，动量用 $\tilde{g}_t$ 计算：
+$$m_t=\beta_1 m_{t-1}+(1-\beta_1)\tilde{g}_t, \quad v_t=\beta_2 v_{t-1}+(1-\beta_2)\tilde{g}_t^2$$
+$$\theta_{t+1}=\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\hat{m}_t$$
+
+\textbf{AdamW：} 梯度 $g_t=\nabla\mathcal{L}(\theta_t)$（不含正则），动量用 $g_t$ 计算（公式同上），最终更新时权重衰减独立剥离：
+$$\theta_{t+1}=\theta_t-\eta_t\lambda\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\hat{m}_t$$
+
+\vspace{0.4em}
+\textbf{(2)} SGD 中 L2 正则使 $\theta_{t+1}=(1-\eta_t\lambda)\theta_t-\eta_t g_t$，与权重衰减完全等价。但在 Adam 中，L2 正则项进入 $\hat{m}_t$，最终被二阶动量缩放：
+$$\theta_{t+1}\approx\theta_t-\frac{\eta_t}{\sqrt{\hat{v}_t}+\epsilon}\!\left(\nabla\mathcal{L}+\lambda\theta_t\right)$$
+大 $\hat{v}_t$ 的权重其衰减强度被削弱至 $\lambda/\sqrt{\hat{v}_t}<\lambda$；小 $\hat{v}_t$ 的权重反而被放大，正则化不均匀。
+
+\textbf{AdamW 的纠正：} 将 $\lambda\theta_t$ 从动量中剥离，直接写入更新步。无论历史梯度如何，每步衰减比例恒为 $\eta_t\lambda$，不受 $\sqrt{\hat{v}_t}$ 干扰，完美恢复权重衰减初衷，在大模型训练中展现出极佳的泛化性和数值稳定性。\quad（论证毕）
+
+\vspace{0.8em}
+
+\noindent\textbf{23.【解析】}
+
+\textbf{(1)} 约束等式 $G=t\times p\times d$。代入 $32=4\times4\times d\Rightarrow d=2$。
+
+\vspace{0.4em}
+\textbf{(2)} 4 台 8 卡节点（Node 0--3，GPU 0--31），$t=4$ 使每机容纳 2 个 TP 组。GPU 0 的并行组归属如下：
+\begin{itemize}[nolistsep,leftmargin=2em,itemsep=0.25em]
+    \item \textbf{TP 组}（机内 NVLink，4 卡）：$[0,\,1,\,2,\,3]$
+    \item \textbf{PP 组}（跨机对应 Stage，4 卡）：$[0,\,4,\,8,\,12]$
+    \item \textbf{DP 组}（相同 PP stage 的数据副本，2 卡）：$[0,\,16]$
+\end{itemize}
+
+\vspace{0.4em}
+\textbf{(3)} TP 在每层前/反向均需高频 All-Reduce（每个 Transformer 层数次），对延迟和带宽极敏感，跨机将立刻因 InfiniBand 带宽瓶颈导致 GPU 严重空闲，故\textbf{必须限制在单机 NVLink 内}。PP 仅在 Stage 边界传输边界激活值，通信频率低、数据量相对小，跨机 IB 可接受。DP 仅在反向结束后进行梯度同步（Bucket 化异步 All-Reduce），Global Batch Size 越大频率越低，跨机 IB 轻松承载。
+
+\vspace{0.8em}
+
+\noindent\textbf{24.【解析】}
+
+\textbf{(1)} 空间切分：序列均分为 $N_{\mathrm{ring}}$ 份，每 GPU 持有长度为 $S/N_{\mathrm{ring}}$ 的 $Q_i,K_i,V_i$ 块。环通信与计算重叠流程：(a) GPU $i$ 用本地 $Q_i$ 与 $K_i$ 计算注意力并累加 $V_i$ 的贡献；(b) 同时非阻塞发送 $(K_i,V_i)$ 至邻居 $i+1$，并从 $i-1$ 接收新的 KV 块；(c) 通信完成后立即用新收到的 KV 块继续计算；(d) 循环 $N_{\mathrm{ring}}-1$ 轮，直至每个 GPU 的 $Q_i$ 与全网所有 KV 块均完成计算。全程仅在块级做局部 Softmax + 加权累加（借助 FlashAttention 的 online softmax），HBM 中从未实例化 $S\times S$ 矩阵。
+
+\vspace{0.4em}
+\textbf{(2)} 单层单头注意力矩阵大小 $S\times S=1{,}048{,}576^2\approx1.10\times10^{12}$ 元素，FP32 存储需 $1.10\times10^{12}\times4\approx4.4\times10^{12}$ 字节 $\approx4.4$ TB。这远超 A100-80GB 的单卡显存容量（约 55 倍），说明\textbf{不加分块的长文本注意力计算在物理上完全不可行}。
+
+\vspace{0.4em}
+\textbf{(3)} FlashAttention + Ring Attention 使 HBM 仅常驻本地 $Q_i$ 块（$\frac{S}{N_{\mathrm{ring}}}\times D$）、KV 双缓冲（$2\times\frac{S}{N_{\mathrm{ring}}}\times D$）和输出 $O$（$\frac{S}{N_{\mathrm{ring}}}\times D$），总复杂度 $O\!\left(\dfrac{S}{N_{\mathrm{ring}}}\cdot D\right)$。当 $N_{\mathrm{ring}}=32$，1M 序列时每卡等效处理长度仅 $\approx31{,}250$ token，激活值仅数 GB。凭借线性扩展性，32 卡集群理论可支持 \textbf{2M--4M} 规模的超长文本训练。\quad（分析毕）
+
+\end{document}
