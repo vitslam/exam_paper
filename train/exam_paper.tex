@@ -14,7 +14,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small 大模型训练与并行计算 期末试卷}
+\fancyhead[L]{\small 大模型训练与分布式计算 期末试卷}
 \fancyhead[R]{\small 第 \thepage\ 页}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -84,11 +84,11 @@
 
 % ============ 试卷标题与说明 ============
 \begin{center}
-{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型训练与并行计算 期末试卷}\\[0.3cm]
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型训练与分布式计算 期末试卷}\\[0.3cm]
 {\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}
 \end{center}
 
-\vspace{1cm}
+\vspace{1.5cm}
 \noindent\rule{\linewidth}{1pt}
 
 \vspace{0.2cm}
@@ -114,6 +114,7 @@
 
 \qitem{3}{在流水线并行（Pipeline Parallelism）中，采用 1F1B（One Forward, One Backward）调度策略。设流水线阶段数为 $P$，一个 Batch 内被切分成的微批（Micro-batch）数量为 $M$（满足 $M \ge P$）。若单次前向传播时间为 $F$，单次反向传播时间为 $B$，则在一个完整的训练步（Step）中，由于气泡（Bubble）导致的处理器空闲时间占总时间的比例（气泡率）为}{}
 \fourchoicestwo{$\dfrac{P-1}{M+P-1}$}{$\dfrac{P-1}{M}$}{$\dfrac{M-1}{M+P-1}$}{$\dfrac{P}{M}$}
+\newpage
 
 \qitem{4}{在 Megatron-LM 样式的张量并行（Tensor Parallelism, TP）中，一个标准的 Transformer 层包含自注意力（Self-Attention）和多层感知机（MLP）两个子块。若 TP 的切分大小为 $t$，在单层前向传播过程中，各个 GPU 之间需要进行集体通信。如果不使用序列并行，该层前向传播总共需要执行的通信操作为}{}
 \fourchoices{2 次 All-Reduce}{2 次 All-Gather 和 2 次 Reduce-Scatter}{4 次 All-Reduce}{1 次 All-Reduce 和 1 次 All-Gather}
@@ -127,8 +128,8 @@
 \qitem{7}{直接偏好优化（Direct Preference Optimization, DPO）是近年来替代传统基于 PPO 算法的 RLHF 的重要方法。已知提示词为 $x$，人类偏好的好回答为 $y_w$，较差回答为 $y_l$，参考模型为 $\pi_{ref}$，当前训练的策略模型为 $\pi_{\theta}$。DPO 损失函数（不含正则项）的形式为}{}
 \fourchoices{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)} - \beta \log \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_\theta(y_w|x)} - \beta \log \dfrac{\pi_{ref}(y_l|x)}{\pi_\theta(y_l|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \beta \log \dfrac{\pi_\theta(y_w|x)}{\pi_{ref}(y_l|x)} - \log \sigma \left( \dfrac{\pi_\theta(y_l|x)}{\pi_{ref}(y_w|x)} \right) \right]$}{$-\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \log \dfrac{\pi_\theta(y_w|x)}{\pi_\theta(y_l|x)} - \beta \log \dfrac{\pi_{ref}(y_w|x)}{\pi_{ref}(y_l|x)} \right) \right]$}
 
-\qitem{8}{在使用分布式数据并行（DDP）训练时，各节点需要对梯度进行同步。若集群有 $P$ 个 GPU 节点，梯度数据总大小为 $V$ 字节，采用环形全归约（Ring-AllReduce）算法。在每个训练步的梯度同步阶段，每个 GPU 发送的总数据量为}{}
-\fourchoicestwo{$V$ 字节}{$\dfrac{2(P-1)V}{P}$ 字节}{$\dfrac{(P-1)V}{P}$ 字节}{$2PV$ 字节}
+\qitem{8}{在使用分布式数据并行（DDP）训练时，各节点需要对梯度进行同步。若集群有 $P$ 个 GPU 节点，梯度数据总大小为 $V$ 字节，采用环形全归约（Ring-AllReduce）算法。在每个训练步的梯度同步阶段，每个 GPU 发送的总数据量(单位：字节)为}{}
+\fourchoicestwo{$V$}{$\dfrac{2(P-1)V}{P}$}{$\dfrac{(P-1)V}{P}$}{$2PV$}
 
 \qitem{9}{在大模型预训练的初始阶段，学习率通常需要经历一个温热启动（Warm-up）阶段（即从 0 渐进增加到设定的最大学习率 $\eta_{max}$），其核心数学与物理机理是}{}
 \fourchoices{随机初始化的权重导致早期梯度极不稳定，较小的学习率可以避免模型在训练初期发散}{增加前期梯度的绝对方差，使得模型更容易跳出局部最优解}{限制前期权重更新的 L2 范数，等效于引入强力的权重衰减（Weight Decay）}{缓解数据分布不均匀导致的早期过拟合}
@@ -168,7 +169,7 @@
   \item 现有一款拥有 70B（$70 \times 10^9$）参数的模型，准备在含有 2T（$2 \times 10^{12}$）Tokens 的数据集上进行预训练。若使用一个 A100 GPU 集群进行训练，假设在混合精度和算子优化下，每张卡实际达到的训练吞吐算力（MFU）平均为 150 TFLOPs/s（$150 \times 10^{12}$ FLOPs/s），估算该预训练任务在 256 张 A100 上需要运行多少天？（2 分）
 \end{enumerate}
 
-\answerlines{3}
+\answerlines{10}
 
 \needspace{6cm}
 \qitem{20}{（本小题满分 10 分）}{}
@@ -186,7 +187,7 @@
   \item 结合 Bradley-Terry 偏好模型，即人类偏好 $y_w$ 优于 $y_l$ 的概率满足：$P(y_w \succ y_l \mid x) = \sigma(R(x, y_w) - R(x, y_l))$，利用（1）中的最优解关系，推导消去隐式奖励函数 $R(x, y)$，从而给出 DPO 损失函数的数学形式。（5 分）
 \end{enumerate}
 
-\answerlines{5}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
@@ -196,7 +197,7 @@
   \item 分析通信开销：标准 DP 每一训练步通过 All-Reduce 进行梯度同步，通信量（每个 GPU 移入/移出数据量）为 $2\Phi$ 参数个元素。请详细说明 ZeRO-3 在前向传播（Forward）和反向传播（Backward）中是如何通过集体通信更新和释放权重的，并证明其单步总通信量为标准 DP 的 1.5 倍。（6 分）
 \end{enumerate}
 
-\answerlines{3}
+\answerlines{5}
 
 \needspace{6cm}
 \qitem{22}{（本小题满分 10 分）}{}
@@ -234,7 +235,7 @@
 \newpage
 \begin{center}
 {\zihao{2}\heiti 参考答案与解析}\\[0.3cm]
-{\small 命题：大模型训练与并行计算课程组 \quad 校对：教研组}
+{\small 命题：大模型训练与分布式计算课程组 \quad 校对：教研组}
 \end{center}
 \vspace{0.3cm}
 \noindent\rule{\linewidth}{0.6pt}
