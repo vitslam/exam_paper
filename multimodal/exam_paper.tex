@@ -16,9 +16,7 @@
 \fancyhf{}
 \fancyhead[L]{\small 大模型多模态 期末试卷}
 \fancyhead[R]{\small 第 \thepage\ 页}
-\fancyfoot[C]{\small 姓名：\underline{\hspace{3cm}}\quad 学号：\underline{\hspace{3cm}}\quad 分数：\underline{\hspace{2cm}}}
 \renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
@@ -30,7 +28,7 @@
 % 大题标题
 \newcommand{\examsection}[2]{%
   \vspace{0.6cm}
-  \noindent{\heiti\large #1\quad (#2)}\par
+  \noindent{\CJKfamily{SimHei}\bfseries\large #1\quad (#2)}\par
   \vspace{0.3cm}
 }
 
@@ -78,7 +76,7 @@
 \newcommand{\answerlines}[1]{%
   \vspace{0.2cm}
   \foreach \i in {1,...,#1} {
-    \noindent\rule{\linewidth}{0.4pt}\par\vspace{0.5cm}
+    \noindent{\color{white}\rule{\linewidth}{0.4pt}}\par\vspace{0.5cm}
   }
 }
 
@@ -86,16 +84,15 @@
 
 % ============ 试卷标题与说明 ============
 \begin{center}
-{\zihao{2}\heiti 大模型多模态 期末试卷}\\[0.3cm]
-{\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}\\[0.2cm]
-{\small 命题范围：视觉编码与 ViT / 对比学习与 CLIP / 模态融合与连接器 / 扩散生成 / 离散视觉 Token / 多模态位置编码 / 对齐与指令微调 / 系统效率与幻觉}
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型多模态 期末试卷}\\[0.3cm]
+{\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}
 \end{center}
 
-\vspace{0.3cm}
+\vspace{1.5cm}
 \noindent\rule{\linewidth}{1pt}
 
 \vspace{0.2cm}
-\noindent{\heiti 注意事项：}
+\noindent{\CJKfamily{SimHei}\bfseries 注意事项：}
 \begin{enumerate}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
   \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
   \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
@@ -116,7 +113,7 @@
 \fourchoices{CLIP 采用单塔编码器，将图像与文本拼接后做自注意力融合}{CLIP 使用双塔结构分别编码图像与文本，通过批内对比学习（InfoNCE）拉近匹配图文对、推远不匹配对}{CLIP 的训练目标是最小化图像与文本在像素空间的均方误差（MSE）}{CLIP 只能处理固定 224$\times$224 图像，无法泛化到其他分辨率}
 
 \qitem{3}{设 Vision Transformer（ViT）输入图像分辨率为 $224\times 224$，patch 大小为 $16\times 16$，并额外添加 1 个 CLS token。则送入 Transformer 编码器的序列长度为}{}
-\fourchoices{$14$}{$196$}{$197$}{$225$}
+\fourchoicestwo{$14$}{$196$}{$197$}{$225$}
 
 \qitem{4}{下列多模态大模型架构与其核心连接器（Connector）的匹配，\textbf{正确}的是}{}
 \fourchoices{LLaVA — Q-Former；BLIP-2 — 线性投影层；Flamingo — Perceiver Resampler}{LLaVA — 线性/MLP 投影层；BLIP-2 — Q-Former；Flamingo — 门控交叉注意力层（Gated Cross-Attention）}{三者均采用 Q-Former 作为唯一连接器}{LLaVA — 扩散 U-Net；BLIP-2 — VAE 编码器；Flamingo — CLIP 文本塔}
@@ -179,9 +176,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 对图像到文本方向，求 $\mathcal{L}_{I\to T}$ 关于正样本 logit $s_{ii}$ 的梯度 $\partial\mathcal{L}_{I\to T}/\partial s_{ii}$，并解释其直觉含义。（4 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{20}
+\answerlines{10}
 
 \needspace{6cm}
 \qitem{20}{（本小题满分 10 分）}{}
@@ -192,9 +187,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 若图像分辨率从 $224\times 224$ 提升至 $448\times 448$（$P$ 不变），分析 $N$、单层注意力 FLOPs 及注意力矩阵显存的变化倍数。（4 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{22}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
@@ -204,9 +197,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 说明为何训练目标可简化为 $\mathcal{L}_{\text{simple}}=\mathbb{E}_{t,x_0,\epsilon}\big[\|\epsilon-\epsilon_\theta(x_t,t)\|^2\big]$，其中 $x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$，$\epsilon\sim\mathcal{N}(0,I)$。（5 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{24}
+\answerlines{12}
 
 \needspace{6cm}
 \qitem{22}{（本小题满分 10 分）}{}
@@ -217,9 +208,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 若视觉编码器输出 $N_v=576$ 个 token，LLM 最大上下文 4096 token，用户文本平均 200 token。估算视觉 token 占上下文的比例，并说明为何高分辨率场景下需要 AnyRes 或 token 压缩。（3 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{22}
+\answerlines{5}
 
 \needspace{6cm}
 \qitem{23}{（本小题满分 10 分）}{}
@@ -230,9 +219,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 设 $N_v=1024$，$N_q=64$，$d=4096$，LLM 层数 $L=32$。估算将 $N_v$ 个 token 直接送入 LLM 与经 Q-Former 压缩后，LLM 侧 KV Cache 显存（fp16）的节省倍数。（3 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{22}
+\answerlines{5}
 
 \needspace{6cm}
 \qitem{24}{（本小题满分 10 分，压轴）}{}
@@ -243,9 +230,7 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 针对现象（c），结合 Continuous Batching、视觉编码器批处理、Prefix Caching（复用 System Prompt 与共享图像 KV），给出至少 3 项优化方向及预期收益。（3 分）
 \end{enumerate}
 
-\vspace{0.2cm}
-\noindent\textit{解：}\par
-\answerlines{28}
+\answerlines{12}
 
 % ============ 答案另起一页 ============
 \newpage
