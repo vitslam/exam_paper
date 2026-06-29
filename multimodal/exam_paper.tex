@@ -1,0 +1,413 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{tasks}
+\usepackage{array,tabularx}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{needspace}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 大模型多模态 期末试卷}
+\fancyhead[R]{\small 第 \thepage\ 页}
+\fancyfoot[C]{\small 姓名：\underline{\hspace{3cm}}\quad 学号：\underline{\hspace{3cm}}\quad 分数：\underline{\hspace{2cm}}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% 工具命令
+\newcommand{\blank}[1]{\underline{\hspace{#1}}}
+\newcommand{\fn}[2]{\dfrac{#1}{#2}}
+
+% 大题标题
+\newcommand{\examsection}[2]{%
+  \vspace{0.6cm}
+  \noindent{\heiti\large #1\quad (#2)}\par
+  \vspace{0.3cm}
+}
+
+% 题号 + 题干 一行写完（避免 parskip 陷阱）
+\newcommand{\qitem}[2]{%
+  \noindent\textbf{#1.}\;#2\par
+  \vspace{0.3em}
+}
+
+% 选择题选项（4个一行/两行可控）
+\newcommand{\fourchoices}[4]{%
+  \begin{enumerate}[label=(\Alph*),leftmargin=2.2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+    \setlength{\itemindent}{0pt}
+    \item #1
+    \item #2
+    \item #3
+    \item #4
+  \end{enumerate}
+  \vspace{0.4em}
+}
+
+% 选择题选项（AB 一行，CD 一行；各占 1/2 宽度，区域内左对齐）
+\newcommand{\fourchoicestwo}[4]{%
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(A)}#1\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(B)}#2\end{minipage}\par
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(C)}#3\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(D)}#4\end{minipage}\par
+  \vspace{0.4em}
+}
+
+% 两栏式选项（短选项）
+\newcommand{\twochoices}[4]{%
+  \begin{tasks}[counter-format={(A)},label-align=left,label-offset={0.4em},label-width={1.6em},item-indent=2em,column-sep=1.5em](2)
+    \task #1
+    \task #2
+    \task #3
+    \task #4
+  \end{tasks}
+  \vspace{0.4em}
+}
+
+% 答题区横线
+\newcommand{\answerlines}[1]{%
+  \vspace{0.2cm}
+  \foreach \i in {1,...,#1} {
+    \noindent\rule{\linewidth}{0.4pt}\par\vspace{0.5cm}
+  }
+}
+
+\begin{document}
+
+% ============ 试卷标题与说明 ============
+\begin{center}
+{\zihao{2}\heiti 大模型多模态 期末试卷}\\[0.3cm]
+{\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}\\[0.2cm]
+{\small 命题范围：视觉编码与 ViT / 对比学习与 CLIP / 模态融合与连接器 / 扩散生成 / 离散视觉 Token / 多模态位置编码 / 对齐与指令微调 / 系统效率与幻觉}
+\end{center}
+
+\vspace{0.3cm}
+\noindent\rule{\linewidth}{1pt}
+
+\vspace{0.2cm}
+\noindent{\heiti 注意事项：}
+\begin{enumerate}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
+  \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
+  \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
+  \item 本试卷中如无特殊说明，图像分辨率为 $H\times W$，patch 大小为 $P$，视觉 token 数为 $N_v$，文本序列长度为 $L$，隐藏维度为 $d$，对比学习温度系数为 $\tau$，扩散步数为 $T$，批大小为 $B$。
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+% ============ 一、选择题 ============
+\examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
+
+\qitem{1}{关于多模态大模型的三个核心问题——表示（Representation）、对齐（Alignment）与融合（Fusion），下列说法\textbf{正确}的是}{}
+\fourchoices{表示关注如何将不同模态映射到统一语义空间；对齐关注跨模态语义对应关系；融合关注多模态信息在下游任务中的联合利用}{表示、对齐、融合三者完全等价，只是不同论文的命名差异}{融合仅发生在预训练阶段，推理时不再需要跨模态交互}{对齐问题仅存在于图文检索任务，在 VQA 等生成任务中不存在}
+
+\qitem{2}{关于 CLIP（Contrastive Language-Image Pre-training）的核心训练机制，下列说法\textbf{正确}的是}{}
+\fourchoices{CLIP 采用单塔编码器，将图像与文本拼接后做自注意力融合}{CLIP 使用双塔结构分别编码图像与文本，通过批内对比学习（InfoNCE）拉近匹配图文对、推远不匹配对}{CLIP 的训练目标是最小化图像与文本在像素空间的均方误差（MSE）}{CLIP 只能处理固定 224$\times$224 图像，无法泛化到其他分辨率}
+
+\qitem{3}{设 Vision Transformer（ViT）输入图像分辨率为 $224\times 224$，patch 大小为 $16\times 16$，并额外添加 1 个 CLS token。则送入 Transformer 编码器的序列长度为}{}
+\fourchoices{$14$}{$196$}{$197$}{$225$}
+
+\qitem{4}{下列多模态大模型架构与其核心连接器（Connector）的匹配，\textbf{正确}的是}{}
+\fourchoices{LLaVA — Q-Former；BLIP-2 — 线性投影层；Flamingo — Perceiver Resampler}{LLaVA — 线性/MLP 投影层；BLIP-2 — Q-Former；Flamingo — 门控交叉注意力层（Gated Cross-Attention）}{三者均采用 Q-Former 作为唯一连接器}{LLaVA — 扩散 U-Net；BLIP-2 — VAE 编码器；Flamingo — CLIP 文本塔}
+
+\qitem{5}{关于 Early Fusion、Late Fusion 与 Intermediate Fusion（交叉注意力融合），下列判断\textbf{错误}的是}{}
+\fourchoices{Early Fusion 在输入层即将多模态特征拼接或相加，计算简单但模态异质性处理困难}{Late Fusion 各模态独立编码后在决策层融合，模块化强但难以捕获细粒度跨模态交互}{Intermediate Fusion 通过 Cross-Attention 让一种模态的 Query 查询另一种模态的 Key/Value，是 LLaVA、Flamingo 等的主流方案}{Late Fusion 一定优于 Intermediate Fusion，因为避免了跨模态注意力带来的 $O(N_v^2)$ 计算开销}
+
+\qitem{6}{Stable Diffusion 属于 Latent Diffusion Model（LDM），其核心设计是}{}
+\fourchoices{直接在原始像素空间 $x\in\mathbb{R}^{H\times W\times 3}$ 上进行 $T$ 步去噪}{先用 VAE 将图像压缩到低维隐空间 $z$，再在隐空间训练扩散去噪网络，大幅降低计算量}{完全放弃 VAE，仅使用 GAN 判别器指导扩散过程}{只在文本嵌入空间做扩散，不生成任何图像}
+
+\qitem{7}{关于 DDPM 前向加噪过程 $q(x_t|x_{t-1})=\mathcal{N}(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I)$，下列说法\textbf{正确}的是}{}
+\fourchoices{前向过程是非马尔可夫的，当前状态依赖全部历史步}{当 $t\to T$ 且 $\bar\alpha_t=\prod_{s=1}^{t}(1-\beta_s)\to 0$ 时，$x_T$ 近似服从标准高斯分布}{反向去噪过程 $q(x_{t-1}|x_t)$ 有解析闭式解，可直接采样}{方差调度 $\beta_t$ 必须恒定为常数，否则训练不稳定}
+
+\qitem{8}{关于 VQ-VAE / VQ-GAN 中离散视觉 Token 化的机制，下列说法\textbf{正确}的是}{}
+\fourchoices{Codebook 中每个向量通过 argmax 操作被选中，梯度可通过 Straight-Through Estimator 近似回传}{离散化后图像无法用 Transformer 建模，必须退回 CNN}{VQ 损失仅包含重建损失，不含 codebook 与 commitment 项}{Codebook 大小对生成质量无影响，越大越好且无需担心码本利用率}
+
+\qitem{9}{CLIP 实现 Zero-shot 图像分类时，对 $C$ 个类别通常构造 $C$ 个文本 prompt（如 ``a photo of a \{class\}''），预测类别为}{}
+\fourchoices{与图像嵌入余弦相似度最大的文本嵌入所对应的类别}{图像嵌入与各类别 one-hot 向量点积最大者}{对 $C$ 个 prompt 的文本嵌入取平均后，与图像嵌入做 L2 距离最小者}{随机从 $C$ 个类别中采样，与 CLIP 无关}
+
+\qitem{10}{Qwen-VL 等模型采用 M-RoPE（Multimodal Rotary Position Embedding）处理图文混合序列，其核心思想是}{}
+\fourchoices{对文本 token 使用 1D 位置编码，对视觉 token 使用 2D 空间位置编码（行、列），并在注意力中分别施加旋转}{所有模态共享同一套绝对正弦位置编码，不区分文本与图像}{完全取消位置编码，依赖 CLIP 预训练权重隐式编码位置}{仅对 CLS token 施加 RoPE，patch token 不加位置信息}
+
+\qitem{11}{关于视觉语言大模型中的对象幻觉（Object Hallucination），下列成因分析\textbf{最准确}的是}{}
+\fourchoices{幻觉完全由解码温度过高导致，Greedy Search 可彻底消除}{语言先验过强、视觉特征注入不足、训练数据中图文对齐噪声等因素，使模型倾向于生成文本中常见但图像中不存在的对象}{幻觉仅发生在扩散模型中，自回归 VLM 不会产生幻觉}{增大视觉 token 数量一定会加剧幻觉，与语言模型容量无关}
+
+\qitem{12}{在 CLIP 批内对比学习中，设 batch 大小为 $B$，图像嵌入为 $\{\mathbf{I}_i\}_{i=1}^{B}$，文本嵌入为 $\{\mathbf{T}_i\}_{i=1}^{B}$（均已 L2 归一化），相似度 logits 为 $s_{ij}=\mathbf{I}_i^{\top}\mathbf{T}_j/\tau$。下列说法\textbf{正确}的是}{}
+\fourchoices{温度 $\tau$ 越小，softmax 分布越平滑，负样本梯度越弱}{对角线元素 $s_{ii}$ 为正样本对，非对角线 $s_{ij}\,(i\neq j)$ 在图像到文本方向充当 in-batch 负样本；$\tau$ 越小分布越尖锐，对困难负样本的区分力越强}{对比矩阵只需计算上三角，因为 $s_{ij}=s_{ji}$ 恒成立}{$B=1$ 时 InfoNCE 仍能有效训练，因为预训练数据足够大}
+
+% ============ 二、填空题 ============
+\examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
+
+\qitem{13}{设 ViT 输入图像分辨率为 $H=W=384$，patch 大小 $P=16$，使用 1 个 CLS token。则 patch 数量为 $N_v=$ \blank{2cm}，送入 Transformer 的总序列长度为 \blank{2cm}。}{}
+
+\qitem{14}{CLIP 对称 InfoNCE 损失（图像到文本方向）可写为
+\[
+\mathcal{L}_{I\to T}=-\frac{1}{B}\sum_{i=1}^{B}\log\frac{\exp(\mathbf{I}_i^{\top}\mathbf{T}_i/\tau)}{\sum_{j=1}^{B}\exp(\mathbf{I}_i^{\top}\mathbf{T}_j/\tau)}.
+\]
+完整对称损失为 $\mathcal{L}_{\text{CLIP}}=$ \blank{5.5cm}。}{}
+
+\qitem{15}{在 CLIP 批内对比学习中，batch 大小为 $B$ 时，对于样本 $i$，图像到文本方向的 in-batch 负样本数量为 \blank{2cm}；图像—文本相似度矩阵规模为 \blank{2.5cm}。}{}
+
+\qitem{16}{设视觉 token 数 $N_v=576$，隐藏维度 $d=1024$，注意力头数 $h=16$。单层视觉自注意力中，$QK^{\top}$ 矩阵的显存占用（fp16，每元素 2 字节）约为 \blank{3cm} MB（保留整数）。}{}
+
+\qitem{17}{DDPM 前向过程定义 $\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。则 $q(x_t|x_0)$ 的闭式分布为
+\[
+q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
+\]
+}{}
+
+\qitem{18}{BLIP-2 中 Q-Former 使用 $N_q$ 个可学习 query token 通过交叉注意力从冻结的视觉编码器输出中抽取特征。若 $N_q=32$，视觉编码器输出序列长度为 $N_v=257$（含 CLS），则 Q-Former 输出的视觉 token 数为 \blank{2cm}；相比直接将 $N_v$ 个 token 送入 LLM，LLM 侧序列长度减少比例为 \blank{3cm}（保留两位小数）。}{}
+
+% ============ 三、解答题 ============
+\examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
+
+\qitem{19}{（本小题满分 10 分）}{}
+\noindent CLIP 通过批内对比学习实现图文对齐。设 batch 大小为 $B$，L2 归一化后的图像嵌入为 $\mathbf{I}_i$，文本嵌入为 $\mathbf{T}_i$，温度系数为 $\tau$，相似度 $s_{ij}=\mathbf{I}_i^{\top}\mathbf{T}_j/\tau$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出 CLIP 对称 InfoNCE 损失的完整表达式（图像$\to$文本与文本$\to$图像两个方向）；（3 分）
+  \item 分析温度系数 $\tau$ 对 softmax 分布与梯度的影响：$\tau$ 增大和减小时分别有何效果？（3 分）
+  \item 对图像到文本方向，求 $\mathcal{L}_{I\to T}$ 关于正样本 logit $s_{ii}$ 的梯度 $\partial\mathcal{L}_{I\to T}/\partial s_{ii}$，并解释其直觉含义。（4 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{20}
+
+\needspace{6cm}
+\qitem{20}{（本小题满分 10 分）}{}
+\noindent 设 ViT 输入图像 $H\times W$，patch 大小 $P\times P$，隐藏维度 $d$，注意力头数 $h$，每头维度 $d_h=d/h$，编码器层数 $L_{\text{enc}}$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 推导 patch 数量 $N_v$ 与总序列长度 $N$（含 CLS token）的表达式；（2 分）
+  \item 推导单层 ViT 编码器中 Self-Attention 前向传播的 FLOPs（含 $Q,K,V$ 投影、$QK^{\top}$、$\mathrm{softmax}(QK^{\top})V$、输出投影），用 $N,d,h$ 表示；（4 分）
+  \item 若图像分辨率从 $224\times 224$ 提升至 $448\times 448$（$P$ 不变），分析 $N$、单层注意力 FLOPs 及注意力矩阵显存的变化倍数。（4 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{22}
+
+\needspace{6cm}
+\qitem{21}{（本小题满分 10 分）}{}
+\noindent 设 DDPM 前向过程为 $q(x_t|x_{t-1})=\mathcal{N}(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I)$，$\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 利用马尔可夫性质与重参数化技巧，推导 $q(x_t|x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I)$ 的完整过程；（5 分）
+  \item 说明为何训练目标可简化为 $\mathcal{L}_{\text{simple}}=\mathbb{E}_{t,x_0,\epsilon}\big[\|\epsilon-\epsilon_\theta(x_t,t)\|^2\big]$，其中 $x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$，$\epsilon\sim\mathcal{N}(0,I)$。（5 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{24}
+
+\needspace{6cm}
+\qitem{22}{（本小题满分 10 分）}{}
+\noindent LLaVA 将预训练视觉编码器（如 CLIP ViT）与 LLM 通过轻量投影器连接，采用两阶段训练策略。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 画出 LLaVA 前向数据流：从原始图像到 LLM 输出的完整路径，标注视觉编码器、投影器、LLM 各阶段的输入输出维度变化；（4 分）
+  \item 对比阶段一（特征对齐预训练）与阶段二（端到端指令微调）的训练目标、冻结策略与数据形式；（3 分）
+  \item 若视觉编码器输出 $N_v=576$ 个 token，LLM 最大上下文 4096 token，用户文本平均 200 token。估算视觉 token 占上下文的比例，并说明为何高分辨率场景下需要 AnyRes 或 token 压缩。（3 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{22}
+
+\needspace{6cm}
+\qitem{23}{（本小题满分 10 分）}{}
+\noindent BLIP-2 的 Q-Former 与 Flamingo 的 Perceiver Resampler 均通过可学习 query 压缩视觉特征。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 描述 Q-Former 的结构：可学习 query 如何通过 Cross-Attention 从冻结 ViT 输出 $H_v\in\mathbb{R}^{N_v\times d_v}$ 中提取 $N_q$ 个视觉 token；（4 分）
+  \item 对比 Q-Former 与 Flamingo Perceiver Resampler 的异同（输入、注意力类型、输出用途）；（3 分）
+  \item 设 $N_v=1024$，$N_q=64$，$d=4096$，LLM 层数 $L=32$。估算将 $N_v$ 个 token 直接送入 LLM 与经 Q-Former 压缩后，LLM 侧 KV Cache 显存（fp16）的节省倍数。（3 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{22}
+
+\needspace{6cm}
+\qitem{24}{（本小题满分 10 分，压轴）}{}
+\noindent 某多模态推理服务部署单卡 A100-80GB，模型为 7B VLM（fp16），视觉编码器 ViT-L（$N_v^{\max}=576$），LLM 最大上下文 32k token。负载包括：（a）高分辨率文档 OCR（单图 $2048\times 2048$，AnyRes 切为 4 子图）；（b）长视频理解（30 fps，10 秒片段，每帧采样 1 次）；（c）在线图文对话（平均 2k 文本 token）。系统观察到：高分辨率请求导致 P99 延迟毛刺；视频任务频繁 OOM；并发提升后 GPU 利用率仅 40\%。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 分析现象（a）的根因，说明 AnyRes 切图后视觉 token 数量的计算方式，以及 token 合并（如 2$\times$2 pooling）如何缓解；（3 分）
+  \item 针对现象（b），设计包含帧采样、视觉 token 压缩、跨帧 KV Cache 复用的方案，并量化 10 秒视频的视觉 token 总数（设每帧 $N_v=576$，压缩比 4:1）；（4 分）
+  \item 针对现象（c），结合 Continuous Batching、视觉编码器批处理、Prefix Caching（复用 System Prompt 与共享图像 KV），给出至少 3 项优化方向及预期收益。（3 分）
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\textit{解：}\par
+\answerlines{28}
+
+% ============ 答案另起一页 ============
+\newpage
+\begin{center}
+{\zihao{2}\heiti 参考答案与解析}\\[0.3cm]
+{\small 命题：大模型多模态课程组 \quad 校对：教研组}
+\end{center}
+\vspace{0.3cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+\subsection*{\heiti 一、选择题答案}
+
+\begin{multicols}{4}
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*,itemsep=0.1em,parsep=0pt,topsep=0pt]
+  \item A
+  \item B
+  \item C
+  \item B
+  \item D
+  \item B
+  \item B
+  \item A
+  \item A
+  \item A
+  \item B
+  \item B
+\end{enumerate}
+\end{multicols}
+
+\vspace{0.3cm}
+\noindent\textbf{1. A}\quad 多模态三要素：表示解决"如何编码各模态"；对齐解决"不同模态语义如何对应"；融合解决"多模态信息如何联合用于下游任务"。三者递进且相互关联。B 错误：三者含义不同；C 错误：推理时仍需 cross-attention 等融合；D 错误：VQA 等生成任务同样需要对齐。
+
+\noindent\textbf{2. B}\quad CLIP 采用图像编码器与文本编码器双塔结构，批内 $B$ 个图文对构成 $B\times B$ 相似度矩阵，对角线为正样本、非对角线为负样本，用 InfoNCE 对比损失训练。A 描述的是单塔融合架构；C 是像素级重建而非语义对齐；D 错误：ViT 可通过插值泛化到其他分辨率。
+
+\noindent\textbf{3. C}\quad Patch 数量 $N_v=(224/16)^2=14^2=196$，加 1 个 CLS token 后总序列长度 $N=196+1=197$。
+
+\noindent\textbf{4. B}\quad LLaVA 用线性或 MLP 将 ViT 输出投影到 LLM 词嵌入空间；BLIP-2 用 Q-Former（可学习 query + 交叉注意力）桥接冻结 ViT 与 LLM；Flamingo 在 LLM 层间插入门控交叉注意力，使文本 token 查询视觉特征。
+
+\noindent\textbf{5. D}\quad Late Fusion 虽简单，但无法在中间层捕获细粒度跨模态交互（如"图中红色物体"与"the red object"的 token 级对齐），Intermediate Fusion 在 VQA、Caption 等任务上通常更优。A、B、C 均为正确描述。
+
+\noindent\textbf{6. B}\quad LDM 先用 VAE 编码器将图像压缩为低维 $z$（如 $64\times 64\times 4$），在 $z$ 空间训练 U-Net 去噪，解码时用 VAE 解码器还原图像，计算量远低于像素空间扩散。
+
+\noindent\textbf{7. B}\quad 前向过程是马尔可夫链；当 $t\to T$，$\bar\alpha_t\to 0$，$x_t$ 近似 $\mathcal{N}(0,I)$。反向 $q(x_{t-1}|x_t)$ 未知，需学习 $p_\theta(x_{t-1}|x_t)$；$\beta_t$ 通常采用线性或 cosine 调度，非常数。
+
+\noindent\textbf{8. A}\quad VQ 将连续特征量化为 codebook 索引，argmax 不可微，常用 Straight-Through：前向用离散索引，反向梯度直通编码器输出。B 错误：DALL-E、Parti 等用离散 token + Transformer；C 错误：VQ 损失含 codebook、commitment、重建项；D 错误：码本过大易导致利用率低。
+
+\noindent\textbf{9. A}\quad Zero-shot 分类：构造 $C$ 个 prompt，编码后与图像嵌入算余弦相似度，取最大者对应类别。无需训练分类头，体现 CLIP 的开放词汇能力。
+
+\noindent\textbf{10. A}\quad M-RoPE 对文本用 1D 位置，对视觉 token 用 2D（$h,w$）位置，在 RoPE 旋转中分别处理，使模型感知空间结构。B、C、D 均不符合 Qwen-VL 等设计。
+
+\noindent\textbf{11. B}\quad 对象幻觉成因：语言先验（"狗"常伴"草地"）过强、视觉注入不足、训练噪声、解码随机性等。A 错误：Greedy 仍可能幻觉；C 错误：VLM 普遍存在；D 错误：适量视觉 token 有助于 grounding，幻觉是多方因素。
+
+\noindent\textbf{12. B}\quad 对角线 $s_{ii}$ 为正样本；$\tau$ 越小 softmax 越尖锐，对困难负样本梯度越大。A 错误：$\tau$ 小则分布更尖锐；C 错误：图像—文本矩阵一般不对称（$s_{ij}\neq s_{ji}$ 当使用不同编码器时）；D 错误：$B=1$ 无负样本，对比学习失效。
+
+\subsection*{\heiti 二、填空题答案}
+
+\noindent\textbf{13.}\quad $N_v=(384/16)^2=24^2=576$\quad ；\quad 总序列长度 $N=576+1=577$。
+
+\noindent\textbf{14.}\quad $\mathcal{L}_{\text{CLIP}}=\dfrac{1}{2}(\mathcal{L}_{I\to T}+\mathcal{L}_{T\to I})$，其中 $\mathcal{L}_{T\to I}$ 为文本到图像方向的 InfoNCE，形式与 $\mathcal{L}_{I\to T}$ 对称。
+
+\noindent\textbf{15.}\quad 负样本数 $=B-1$\quad ；\quad 相似度矩阵规模 $=B\times B$。
+
+\noindent\textbf{16.}\quad $QK^{\top}$ 规模为 $576\times 576$，fp16 显存 $=576^2\times 2=663\,552$ 字节 $\approx 0.66$ MB，保留整数为 $\boxed{1}$ MB。
+
+\noindent\textbf{17.}\quad 均值 $\sqrt{\bar\alpha_t}\,x_0$\quad ；\quad 方差 $(1-\bar\alpha_t)I$（或协方差矩阵 $(1-\bar\alpha_t)I$）。
+
+\noindent\textbf{18.}\quad 输出视觉 token 数 $=32$\quad ；\quad 减少比例 $=1-32/257\approx 0.88$（或 $(257-32)/257\approx 0.88$）。
+
+\subsection*{\heiti 三、解答题答案}
+
+\subsubsection*{19. CLIP 对比学习（10 分）}
+
+\noindent\textbf{(1) 对称 InfoNCE（3 分）}
+
+\[
+\mathcal{L}_{I\to T}=-\frac{1}{B}\sum_{i=1}^{B}\log\frac{\exp(s_{ii})}{\sum_{j=1}^{B}\exp(s_{ij})},\quad
+\mathcal{L}_{T\to I}=-\frac{1}{B}\sum_{j=1}^{B}\log\frac{\exp(s_{jj})}{\sum_{i=1}^{B}\exp(s_{ij})},
+\]
+\[
+\mathcal{L}_{\text{CLIP}}=\frac{1}{2}(\mathcal{L}_{I\to T}+\mathcal{L}_{T\to I}).
+\]
+
+\noindent\textbf{(2) 温度 $\tau$ 的影响（3 分）}
+
+$\tau$ 增大：logits $s_{ij}/\tau$ 变小，softmax 分布更平滑，所有样本（含负样本）获得更均匀的梯度，学习更稳定但区分力下降。$\tau$ 减小：分布更尖锐，模型更关注困难负样本（高相似度但不匹配的对），梯度集中在少数样本，有利于细粒度对齐但可能训练不稳定。CLIP 典型 $\tau\approx 0.07$。
+
+\noindent\textbf{(3) 正样本 logit 梯度（4 分）}
+
+记 $p_{ij}=\exp(s_{ij})/\sum_k\exp(s_{ik})$，则 $\mathcal{L}_{I\to T}=-\frac{1}{B}\sum_i\log p_{ii}$，故
+\[
+\frac{\partial\mathcal{L}_{I\to T}}{\partial s_{ii}}=-\frac{1}{B}(1-p_{ii}).
+\]
+直觉：$p_{ii}$ 越接近 1（正样本已很好区分），梯度越接近 0；$p_{ii}$ 小时梯度为负且绝对值大，推动 $s_{ii}$ 增大，拉近正样本对。
+
+\subsubsection*{20. ViT 计算量推导（10 分）}
+
+\noindent\textbf{(1) 序列长度（2 分）}
+
+$N_v=\dfrac{H}{P}\cdot\dfrac{W}{P}$，总序列长度 $N=N_v+1$（含 CLS）。
+
+\noindent\textbf{(2) 单层 Self-Attention FLOPs（4 分）}
+
+$Q,K,V$ 投影：各 $2Nd^2$，共 $6Nd^2$。$S=QK^{\top}$：$2N^2 d$。$O=\mathrm{softmax}(S)V$：$2N^2 d$。输出投影：$2Nd^2$。单层注意力合计 $\approx 8Nd^2+4N^2 d$ FLOPs。
+
+\noindent\textbf{(3) 分辨率翻倍的影响（4 分）}
+
+$224\to 448$：$N_v$ 从 $14^2=196$ 增至 $28^2=784$，约 4 倍。$N$ 从 197 增至 785。注意力 FLOPs 中 $N^2 d$ 项增约 $4^2=16$ 倍，$Nd^2$ 项增 4 倍；显存 $N\times N$ 注意力矩阵增 16 倍。故高分辨率是视觉 token 爆炸的主要来源。
+
+\subsubsection*{21. 扩散模型推导（10 分）}
+
+\noindent\textbf{(1) $q(x_t|x_0)$ 闭式解（5 分）}
+
+由 $x_t=\sqrt{\alpha_t}x_{t-1}+\sqrt{1-\alpha_t}\,\epsilon_{t-1}$ 递推，归纳得
+\[
+x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\bar\epsilon,\quad \bar\epsilon\sim\mathcal{N}(0,I),
+\]
+即 $q(x_t|x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}\,x_0,(1-\bar\alpha_t)I)$。
+
+\noindent\textbf{(2) 简化为噪声预测（5 分）}
+
+原始 ELBO 含多步 KL 项。在 $x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\epsilon$ 下，$x_0$ 与 $\epsilon$ 一一对应。预测 $x_0$ 等价于预测 $\epsilon$，Ho 等证明加权变分下界可简化为 $\mathbb{E}[\|\epsilon-\epsilon_\theta(x_t,t)\|^2]$，即直接学习噪声，训练更稳定且效果相当。
+
+\subsubsection*{22. LLaVA 架构与训练（10 分）}
+
+\noindent\textbf{(1) 数据流（4 分）}
+
+图像 $\to$ ViT $\to$ $[N_v\times d_v]$ $\to$ 投影器（Linear/MLP）$\to$ $[N_v\times d_{\text{LLM}}]$ $\to$ 与文本 token 嵌入拼接 $\to$ LLM 自回归生成。投影器将视觉特征映射到 LLM 词嵌入空间。
+
+\noindent\textbf{(2) 两阶段对比（3 分）}
+
+阶段一：冻结 ViT 与 LLM，只训练投影器，用图文对（如 CC3M）做 next-token 预测，学习视觉—语言对齐。阶段二：解冻 LLM（或 LoRA），用指令数据（VQA、对话）端到端微调，学习遵循指令与推理。
+
+\noindent\textbf{(3) Token 预算（3 分）}
+
+视觉占比 $=576/(576+200)\approx 74\%$。高分辨率时 $N_v$ 可超 2k，易占满 4k 上下文，需 AnyRes 切图后选择性编码，或 2$\times$2 pooling 合并 token，或 Q-Former 压缩。
+
+\subsubsection*{23. Q-Former 与 Perceiver Resampler（10 分）}
+
+\noindent\textbf{(1) Q-Former 结构（4 分）}
+
+$N_q$ 个可学习 query $\mathbf{Q}\in\mathbb{R}^{N_q\times d}$ 作为 Query，ViT 输出 $H_v$ 作为 Key/Value，经 Cross-Attention：$\text{Attn}(\mathbf{Q},H_v,H_v)$，输出 $N_q$ 个视觉 token。ViT 冻结，只训练 Q-Former 与后续 LLM 接口。
+
+\noindent\textbf{(2) 异同（3 分）}
+
+Q-Former：独立 BERT 式模块，输出接 LLM 投影；Flamingo Perceiver Resampler：在 Flamingo 框架内，用固定数量 latent 查询视觉特征，输出注入 LLM 交叉注意力层。二者均为"少量 query + Cross-Attn"压缩，但集成方式不同。
+
+\noindent\textbf{(3) KV Cache 节省（3 分）}
+
+LLM KV Cache 与序列长度成正比。直接输入：$N_v=1024$；压缩后：$N_q=64$。节省倍数 $=1024/64=16$。32 层 fp16：约 $2\times L\times N\times d\times 2$ 字节，序列减 16 倍则 KV Cache 减 16 倍。
+
+\subsubsection*{24. 压轴题：多模态推理系统优化（10 分）}
+
+\noindent\textbf{(1) 高分辨率延迟毛刺（3 分）}
+
+根因：$2048\times 2048$ 单图 AnyRes 切 4 子图，每子图 $N_v\approx 576$，总视觉 token $\approx 4\times 576=2304$，Prefill 计算量 $\propto N^2$，阻塞 Decode。Token 合并：2$\times$2 pooling 将每子图 576 压至 144，总 token $4\times 144=576$，减 75\%。
+
+\noindent\textbf{(2) 长视频 OOM 方案（4 分）}
+
+10 秒 30 fps 采样 300 帧。每帧 576 token，压缩比 4:1 后每帧 144 token，总视觉 token $=300\times 144=43\,200$。方案：帧采样（如 1 fps 得 10 帧）、Perceiver 压缩、跨帧 KV 复用（相邻帧共享前缀）。优化后 10 帧 $\times$ 144 $=1440$ token，可纳入 32k 上下文。
+
+\noindent\textbf{(3) 并发与利用率（3 分）}
+
+（1）Continuous Batching：请求级调度，完成即释放，提高并发；（2）视觉编码器批处理：多图拼 batch 提升 ViT 利用率；（3）Prefix Caching：复用 System Prompt 与共享图像 KV，减少重复 Prefill。预期：SM 利用率从 40\% 提升至 60\%+，P99 延迟降低 30\%+。
+
+\end{document}
