@@ -106,8 +106,8 @@
 % ============ 一、选择题 ============
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
-\qitem{1}{在大模型混合精度（Mixed-Precision）训练中，使用 AdamW 优化器并维护 FP32 版本的 Master Weights。对于参数量为 $\Phi$ 的模型，仅存储模型参数、梯度和优化器状态（不含激活值与通信缓存），每个参数平均需要占用的显存大小为}{}
-\fourchoicestwo{$12\Phi$ 字节}{$16\Phi$ 字节}{$18\Phi$ 字节}{$20\Phi$ 字节}
+\qitem{1}{关于混合专家模型（Mixture of Experts, MoE）的基本概念，以下说法\textbf{正确}的是}{}
+\fourchoices{MoE 中每个 Token 仅由一个专家处理，其余专家对该 Token 不产生任何影响}{在 Switch Transformer 中，使用 Top-1 路由意味着每个 Token 只被路由到一个专家}{MoE 的计算复杂度随专家数量线性增长，与激活 Token 数量无关}{MoE 通过增加专家数量可以无限扩大模型容量，而不会增加任何训练成本}
 
 \qitem{2}{根据 Chinchilla Scaling Law（Hoffmann 等人提出的缩放定律），在给定计算量预算 $C$（单位：FLOPs）下，模型参数量 $N$ 与训练 Token 数 $D$ 的最优分配比例应满足 $C \approx 6ND$。当算力预算增加到原来的 $k$ 倍时，为了达到最优训练效果，模型参数量 $N$ 和训练数据量 $D$ 的理论增长比例大约为}{}
 \fourchoices{$N$ 增长 $k^{0.73}$ 倍，$D$ 增长 $k^{0.27}$ 倍}{$N$ 增长 $k^{0.5}$ 倍，$D$ 增长 $k^{0.5}$ 倍}{$N$ 增长 $k^{0.3}$ 倍，$D$ 增长 $k^{0.7}$ 倍}{$N$ 增长 $k$ 倍，$D$ 保持不变}
@@ -260,7 +260,7 @@
 \end{multicols}
 
 \vspace{0.3cm}
-\noindent\textbf{1. B}\quad 在混合精度训练中：模型权重（FP16/BF16）$2\Phi$ 字节；梯度（FP16/BF16）$2\Phi$ 字节；AdamW 优化器状态包含 FP32 的 Master Weight（$4\Phi$）、一阶动量 $m$（$4\Phi$）、二阶动量 $v$（$4\Phi$），共 $12\Phi$ 字节。模型状态总显存为 $2\Phi+2\Phi+12\Phi=16\Phi$ 字节。故选 B。
+\noindent\textbf{1. B}\quad (A) 错误：标准 MoE 常采用 Top-$k$ 路由（$k>1$），一个 Token 可同时被多个专家处理；即便在 Top-1 情形下，未被选中的专家虽不直接参与该 Token 的前向计算，路由网络与负载均衡机制仍会影响整体训练。(B) 正确：Switch Transformer 明确采用 Top-1 路由，每个 Token 经路由器打分后仅分配给得分最高的一个专家。(C) 错误：稀疏 MoE 的单步计算量主要取决于被激活的专家数（通常为 Top-$k$）与 Token 数量，而非专家总数 $E$。(D) 错误：增加专家会扩大总参数量及存储、通信与负载均衡开销，并非不增加任何训练成本。故选 B。
 
 \noindent\textbf{2. B}\quad Chinchilla Scaling Law 证明，在算力增加时，参数量 $N$ 和数据集 Token 数 $D$ 应当以大致相等的比例缩放（即 $N\propto C^{0.5}$，$D\propto C^{0.5}$）。旧的 Kaplan 定律认为参数量增长应快于数据量（$N\propto C^{0.73}$），Chinchilla 修正了这一结论。故选 B。
 
@@ -292,7 +292,7 @@
 
 \noindent\textbf{13.}\quad $8$\quad 全局批大小满足 $\text{Global Batch Size}=\text{GPU 数量}\times\text{微批大小}\times\text{梯度累积步数}$，代入 $1024=32\times4\times\text{Steps}$，得 $\text{Steps}=8$。
 
-\noindent\textbf{14.}\quad $112$\quad 由第 1 题知每个参数占用模型状态显存 16 字节，7B 模型最小模型状态显存 $M=7\times10^{9}\times16=112\times10^{9}$ 字节 $=112$ GB。
+\noindent\textbf{14.}\quad $112$\quad BF16 混合精度下，每个参数占用模型状态显存：权重 $2$ 字节 + 梯度 $2$ 字节 + AdamW 优化器状态（FP32 Master Weight、一阶动量、二阶动量各 $4$ 字节）$12$ 字节，合计 $16$ 字节。7B 模型最小模型状态显存 $M=7\times10^{9}\times16=112\times10^{9}$ 字节 $=112$ GB。
 
 \noindent\textbf{15.}\quad $2\dfrac{t-1}{t}SBD$\quad LN/Dropout 后通过 All-Gather 拼接序列，传输 $\dfrac{t-1}{t}SBD$ 元素；自注意力输出后通过 Reduce-Scatter 切分回各 GPU，同样传输 $\dfrac{t-1}{t}SBD$ 元素，累计 $2\dfrac{t-1}{t}SBD$。
 
