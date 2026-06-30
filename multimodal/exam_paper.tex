@@ -223,11 +223,16 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
 
 \needspace{6cm}
 \qitem{24}{（本小题满分 10 分，压轴）}{}
-\noindent 某多模态推理服务部署单卡 A100-80GB，模型为 7B VLM（fp16），视觉编码器 ViT-L（$N_v^{\max}=576$），LLM 最大上下文 32k token。负载包括：（a）高分辨率文档 OCR（单图 $2048\times 2048$，AnyRes 切为 4 子图）；（b）长视频理解（30 fps，10 秒片段，每帧采样 1 次）；（c）在线图文对话（平均 2k 文本 token）。系统观察到：高分辨率请求导致 P99 延迟毛刺；视频任务频繁 OOM；并发提升后 GPU 利用率仅 40\%。
+\noindent 在多模态大模型中，为了同时处理文本、图像和视频，常采用多维旋转位置编码（RoPE）。假设我们有一个 $2\times 2$ 的图像，像素坐标 $(h,w)$ 分别表示行和列，$h,w\in\{0,1\}$。每个像素的特征向量为 4 维，前 2 维用高度编码，后 2 维用宽度编码。1D RoPE 对二维子向量的变换定义为
+\[
+R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
+=\begin{pmatrix}a\cos\theta-b\sin\theta\\ a\sin\theta+b\cos\theta\end{pmatrix}.
+\]
+设高度基频 $\omega_h=4\pi$，宽度基频 $\omega_w=2\pi$。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 分析现象（a）的根因，说明 AnyRes 切图后视觉 token 数量的计算方式，以及 token 合并（如 2$\times$2 pooling）如何缓解；（3 分）
-  \item 针对现象（b），设计包含帧采样、视觉 token 压缩、跨帧 KV Cache 复用的方案，并量化 10 秒视频的视觉 token 总数（设每帧 $N_v=576$，压缩比 4:1）；（4 分）
-  \item 针对现象（c），结合 Continuous Batching、视觉编码器批处理、Prefix Caching（复用 System Prompt 与共享图像 KV），给出至少 3 项优化方向及预期收益。（3 分）
+  \item 已知某像素位于坐标 $(1,0)$，其原始特征向量为 $\mathbf{v}=[1,0,0,1]^{\top}$，求经过 2D RoPE 编码后的向量。（3 分）
+  \item 已知一段 2 帧视频，每帧大小为 $2\times 2$，体素坐标 $(t,h,w)$，$t\in\{0,1\}$。现采用 M-RoPE，将特征向量拆分为时间、高度、宽度三组，每组 2 维。基频分别为 $\omega_t=3\pi$，$\omega_h=4\pi$，$\omega_w=2\pi$。某体素位于 $(1,0,1)$，原始特征向量为 $\mathbf{u}=[1,0,0,1,1,0]^{\top}$（依次对应时间、高度、宽度组），求 M-RoPE 编码后的向量。（3 分）
+  \item 将坐标 $x$ 视为连续变量，频率 $\omega$ 取遍所有实数，且各频率权重相等。于是位置 $x$ 的编码向量（忽略幅度）可视为函数 $\phi(x)=e^{i\omega x}$ 关于 $\omega$ 的连续族。对于任意两个位置 $x$ 和 $y$，求它们的编码内积 $K(x,y)$。（4 分）
 \end{enumerate}
 
 \answerlines{12}
@@ -341,17 +346,113 @@ $224\to 448$：$N_v$ 从 $14^2=196$ 增至 $28^2=784$，约 4 倍。$N$ 从 197 
 
 \subsubsection*{21. 扩散模型推导（10 分）}
 
-\noindent\textbf{(1) $q(x_t|x_0)$ 闭式解（5 分）}
+\noindent\textbf{(1) $q(x_t|x_0)$ 闭式解推导（5 分）}
 
-由 $x_t=\sqrt{\alpha_t}x_{t-1}+\sqrt{1-\alpha_t}\,\epsilon_{t-1}$ 递推，归纳得
+\textbf{Step 1：写出单步重参数化形式。}
+
+由题设前向马尔可夫过程
 \[
-x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\bar\epsilon,\quad \bar\epsilon\sim\mathcal{N}(0,I),
+q(x_t|x_{t-1})=\mathcal{N}\!\left(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I\right),
+\quad \alpha_t=1-\beta_t,
 \]
-即 $q(x_t|x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}\,x_0,(1-\bar\alpha_t)I)$。
+可重参数化为
+\[
+x_t=\sqrt{\alpha_t}\,x_{t-1}+\sqrt{1-\alpha_t}\,\epsilon_{t-1},\qquad \epsilon_{t-1}\sim\mathcal{N}(0,I).
+\]
 
-\noindent\textbf{(2) 简化为噪声预测（5 分）}
+\textbf{Step 2：递推至 $x_1$。}
 
-原始 ELBO 含多步 KL 项。在 $x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\epsilon$ 下，$x_0$ 与 $\epsilon$ 一一对应。预测 $x_0$ 等价于预测 $\epsilon$，Ho 等证明加权变分下界可简化为 $\mathbb{E}[\|\epsilon-\epsilon_\theta(x_t,t)\|^2]$，即直接学习噪声，训练更稳定且效果相当。
+\[
+x_1=\sqrt{\alpha_1}\,x_0+\sqrt{1-\alpha_1}\,\epsilon_0.
+\]
+
+\textbf{Step 3：递推至 $x_2$ 并观察系数规律。}
+
+\[
+\begin{aligned}
+x_2&=\sqrt{\alpha_2}\,x_1+\sqrt{1-\alpha_2}\,\epsilon_1\\
+&=\sqrt{\alpha_2}\!\left(\sqrt{\alpha_1}\,x_0+\sqrt{1-\alpha_1}\,\epsilon_0\right)+\sqrt{1-\alpha_2}\,\epsilon_1\\
+&=\sqrt{\alpha_1\alpha_2}\,x_0+\underbrace{\sqrt{\alpha_2(1-\alpha_1)}\,\epsilon_0+\sqrt{1-\alpha_2}\,\epsilon_1}_{\text{两个独立高斯的线性组合}}.
+\end{aligned}
+\]
+因 $\epsilon_0,\epsilon_1$ 独立标准高斯，其线性组合仍为零均值高斯，方差为
+\[
+\alpha_2(1-\alpha_1)+(1-\alpha_2)=1-\alpha_1\alpha_2.
+\]
+故可写为 $x_2=\sqrt{\bar\alpha_2}\,x_0+\sqrt{1-\bar\alpha_2}\,\bar\epsilon_1$，其中 $\bar\alpha_2=\alpha_1\alpha_2$，$\bar\epsilon_1\sim\mathcal{N}(0,I)$。
+
+\textbf{Step 4：数学归纳法推广到一般 $t$。}
+
+设 $\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$，且已有
+\[
+x_{t-1}=\sqrt{\bar\alpha_{t-1}}\,x_0+\sqrt{1-\bar\alpha_{t-1}}\,\bar\epsilon_{t-2}.
+\]
+则
+\[
+\begin{aligned}
+x_t&=\sqrt{\alpha_t}\,x_{t-1}+\sqrt{1-\alpha_t}\,\epsilon_{t-1}\\
+&=\sqrt{\alpha_t\bar\alpha_{t-1}}\,x_0+\sqrt{\alpha_t(1-\bar\alpha_{t-1})}\,\bar\epsilon_{t-2}+\sqrt{1-\alpha_t}\,\epsilon_{t-1}.
+\end{aligned}
+\]
+注意到 $\alpha_t\bar\alpha_{t-1}=\bar\alpha_t$。噪声项方差为
+\[
+\alpha_t(1-\bar\alpha_{t-1})+(1-\alpha_t)=1-\alpha_t\bar\alpha_{t-1}=1-\bar\alpha_t.
+\]
+因此
+\[
+x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon,\qquad \epsilon\sim\mathcal{N}(0,I).
+\]
+即任意 $t$ 步后，条件分布为
+\[
+\boxed{q(x_t|x_0)=\mathcal{N}\!\left(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I\right).}
+\]
+当 $t\to T$ 且 $\bar\alpha_T\to 0$ 时，$x_T\approx\mathcal{N}(0,I)$，实现向纯噪声的渐进破坏。（推导毕）
+
+\noindent\textbf{(2) 训练目标简化为噪声预测（5 分）}
+
+\textbf{Step 1：变分下界的原始形式。}
+
+DDPM 训练目标是最大化数据对数似然 $\log p_\theta(x_0)$，等价于最小化变分下界（ELBO）。对每一步去噪分布 $p_\theta(x_{t-1}|x_t)$ 与真实后验 $q(x_{t-1}|x_t,x_0)$ 的 KL 散度可写为（省略常数项）：
+\[
+\mathcal{L}_{\text{VLB}}=\mathbb{E}_q\!\left[\sum_{t=1}^{T} D_{\mathrm{KL}}\!\big(q(x_{t-1}|x_t,x_0)\,\|\,p_\theta(x_{t-1}|x_t)\big)\right]+\text{const}.
+\]
+其中真实后验 $q(x_{t-1}|x_t,x_0)$ 在已知 $x_0$ 时有闭式高斯解，其均值是 $x_0$ 与 $x_t$ 的线性组合。
+
+\textbf{Step 2：由 (1) 建立 $x_0$ 与 $\epsilon$ 的一一对应。}
+
+对采样 $t$、数据 $x_0$、噪声 $\epsilon\sim\mathcal{N}(0,I)$，定义
+\[
+x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon.
+\]
+由于 $\bar\alpha_t>0$，可反解
+\[
+x_0=\frac{1}{\sqrt{\bar\alpha_t}}\!\left(x_t-\sqrt{1-\bar\alpha_t}\,\epsilon\right).
+\]
+故给定 $(x_t,t)$ 时，预测 $x_0$、预测 $\epsilon$、预测 $x_{t-1}$ 三者\textbf{参数化等价}，可互相线性变换。
+
+\textbf{Step 3：将 KL 项改写为均方误差。}
+
+Ho 等（DDPM）证明：在参数化
+\[
+p_\theta(x_{t-1}|x_t)=\mathcal{N}\!\big(\mu_\theta(x_t,t),\,\sigma_t^2 I\big)
+\]
+且选取与 $q$ 匹配的方差 $\sigma_t^2$ 时，第 $t$ 步 KL 项（忽略权重系数）等价于
+\[
+\left\|\tilde\mu_t(x_t,x_0)-\mu_\theta(x_t,t)\right\|^2,
+\]
+其中 $\tilde\mu_t$ 为 $q(x_{t-1}|x_t,x_0)$ 的均值。将 $\tilde\mu_t$ 用 $\epsilon$ 表示后，可进一步化为
+\[
+\left\|\epsilon-\epsilon_\theta(x_t,t)\right\|^2.
+\]
+即网络直接预测注入噪声 $\epsilon$，与预测均值 $\mu_\theta$ 或预测 $x_0$ 在数学上等价。
+
+\textbf{Step 4：得到 Simple Loss 及其优点。}
+
+对 $t$ 均匀采样，最终常用的简化训练目标为
+\[
+\boxed{\mathcal{L}_{\text{simple}}=\mathbb{E}_{t\sim\mathcal{U}\{1,\ldots,T\},\,x_0,\,\epsilon}\!\left[\left\|\epsilon-\epsilon_\theta(x_t,t)\right\|^2\right].}
+\]
+相比完整 VLB：（i）\textbf{实现简单}，只需对加噪样本回归噪声；（ii）\textbf{训练稳定}，各 $t$ 步梯度尺度更均衡；（iii）\textbf{效果相当}，实践中与加权 VLB 生成质量接近。Stable Diffusion 等 latent 扩散模型在隐空间 $z$ 上沿用同一套 $\epsilon$-prediction 范式。（推导毕）
 
 \subsubsection*{22. LLaVA 架构与训练（10 分）}
 
@@ -381,18 +482,89 @@ Q-Former：独立 BERT 式模块，输出接 LLM 投影；Flamingo Perceiver Res
 
 LLM KV Cache 与序列长度成正比。直接输入：$N_v=1024$；压缩后：$N_q=64$。节省倍数 $=1024/64=16$。32 层 fp16：约 $2\times L\times N\times d\times 2$ 字节，序列减 16 倍则 KV Cache 减 16 倍。
 
-\subsubsection*{24. 压轴题：多模态推理系统优化（10 分）}
+\subsubsection*{24. 2D RoPE / M-RoPE 计算与连续核（10 分，压轴）}
 
-\noindent\textbf{(1) 高分辨率延迟毛刺（3 分）}
+\noindent\textbf{(1) 2D RoPE 编码（3 分）}
 
-根因：$2048\times 2048$ 单图 AnyRes 切 4 子图，每子图 $N_v\approx 576$，总视觉 token $\approx 4\times 576=2304$，Prefill 计算量 $\propto N^2$，阻塞 Decode。Token 合并：2$\times$2 pooling 将每子图 576 压至 144，总 token $4\times 144=576$，减 75\%。
+像素坐标 $(h,w)=(1,0)$，$\mathbf{v}=[v_1,v_2,v_3,v_4]^{\top}=[1,0,0,1]^{\top}$。2D RoPE 对高度、宽度子向量分别施加旋转，旋转角为坐标乘以对应基频：
+\[
+\theta_h=h\,\omega_h=1\times 4\pi=4\pi,\qquad
+\theta_w=w\,\omega_w=0\times 2\pi=0.
+\]
 
-\noindent\textbf{(2) 长视频 OOM 方案（4 分）}
+\textbf{高度组}（前两维 $[1,0]^{\top}$）：
+\[
+R_{4\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}\cos 4\pi\cdot 1-\sin 4\pi\cdot 0\\ \sin 4\pi\cdot 1+\cos 4\pi\cdot 0\end{pmatrix}
+=\begin{pmatrix}1\\0\end{pmatrix}.
+\]
 
-10 秒 30 fps 采样 300 帧。每帧 576 token，压缩比 4:1 后每帧 144 token，总视觉 token $=300\times 144=43\,200$。方案：帧采样（如 1 fps 得 10 帧）、Perceiver 压缩、跨帧 KV 复用（相邻帧共享前缀）。优化后 10 帧 $\times$ 144 $=1440$ token，可纳入 32k 上下文。
+\textbf{宽度组}（后两维 $[0,1]^{\top}$）：
+\[
+R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
+=\begin{pmatrix}\cos 0\cdot 0-\sin 0\cdot 1\\ \sin 0\cdot 0+\cos 0\cdot 1\end{pmatrix}
+=\begin{pmatrix}0\\1\end{pmatrix}.
+\]
 
-\noindent\textbf{(3) 并发与利用率（3 分）}
+拼接得
+\[
+\boxed{\mathbf{v}'=[1,\,0,\,0,\,1]^{\top}.}
+\]
+（本例中 $4\pi$ 与 $0$ 角均为 $2\pi$ 整数倍，旋转退化为恒等变换。）
 
-（1）Continuous Batching：请求级调度，完成即释放，提高并发；（2）视觉编码器批处理：多图拼 batch 提升 ViT 利用率；（3）Prefix Caching：复用 System Prompt 与共享图像 KV，减少重复 Prefill。预期：SM 利用率从 40\% 提升至 60\%+，P99 延迟降低 30\%+。
+\noindent\textbf{(2) M-RoPE 编码（3 分）}
+
+体素坐标 $(t,h,w)=(1,0,1)$，$\mathbf{u}=[u_1,u_2,u_3,u_4,u_5,u_6]^{\top}=[1,0,0,1,1,0]^{\top}$。三组旋转角：
+\[
+\theta_t=t\,\omega_t=3\pi,\qquad
+\theta_h=h\,\omega_h=0,\qquad
+\theta_w=w\,\omega_w=2\pi.
+\]
+
+\textbf{时间组} $[1,0]^{\top}$：$\cos 3\pi=-1$，$\sin 3\pi=0$，
+\[
+R_{3\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}-1\\0\end{pmatrix}.
+\]
+
+\textbf{高度组} $[0,1]^{\top}$：$\theta_h=0$，
+\[
+R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
+=\begin{pmatrix}0\\1\end{pmatrix}.
+\]
+
+\textbf{宽度组} $[1,0]^{\top}$：$\cos 2\pi=1$，$\sin 2\pi=0$，
+\[
+R_{2\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}1\\0\end{pmatrix}.
+\]
+
+拼接得
+\[
+\boxed{\mathbf{u}'=[-1,\,0,\,0,\,1,\,1,\,0]^{\top}.}
+\]
+
+\noindent\textbf{(3) 连续频率编码内积 $K(x,y)$（4 分）}
+
+\textbf{Step 1：定义内积核。}
+\[
+K(x,y)=\int_{-\infty}^{\infty}\phi(x,\omega)\,\overline{\phi(y,\omega)}\,\mathrm{d}\omega
+=\int_{-\infty}^{\infty}e^{i\omega x}\,e^{-i\omega y}\,\mathrm{d}\omega
+=\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega.
+\]
+
+\textbf{Step 2：傅里叶逆变换。}
+
+在分布（广义函数）意义下：
+\[
+\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega=2\pi\,\delta(x-y).
+\]
+其中 $\delta(\cdot)$ 为\textbf{狄拉克函数}。
+
+\textbf{Step 3：结论与意义。}
+\[
+\boxed{K(x,y)=2\pi\,\delta(x-y).}
+\]
+内积仅依赖\textbf{相对位置 $x-y$}。离散 RoPE 用有限频率 $\theta_k$ 逼近该核，得 $K(x,y)\approx\sum_k\cos((x-y)\theta_k)$，与 (1)(2) 中 $\cos\theta$、$\sin\theta$ 的旋转形式一致。（推导毕）
 
 \end{document}
