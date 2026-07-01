@@ -106,23 +106,25 @@
 % ============ 一、选择题 ============
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
-\qitem{1}{关于多模态大模型的三个核心问题——表示（Representation）、对齐（Alignment）与融合（Fusion），下列说法\textbf{正确}的是}{}
-\fourchoices{表示关注如何将不同模态映射到统一语义空间；对齐关注跨模态语义对应关系；融合关注多模态信息在下游任务中的联合利用}{表示、对齐、融合三者完全等价，只是不同论文的命名差异}{融合仅发生在预训练阶段，推理时不再需要跨模态交互}{对齐问题仅存在于图文检索任务，在 VQA 等生成任务中不存在}
-
-\qitem{2}{关于 CLIP（Contrastive Language-Image Pre-training）的核心训练机制，下列说法\textbf{正确}的是}{}
+\qitem{1}{关于 CLIP（Contrastive Language-Image Pre-training）的核心训练机制，下列说法\textbf{正确}的是}{}
 \fourchoices{CLIP 采用单塔编码器，将图像与文本拼接后做自注意力融合}{CLIP 使用双塔结构分别编码图像与文本，通过批内对比学习（InfoNCE）拉近匹配图文对、推远不匹配对}{CLIP 的训练目标是最小化图像与文本在像素空间的均方误差（MSE）}{CLIP 只能处理固定 224$\times$224 图像，无法泛化到其他分辨率}
 
-\qitem{3}{设 Vision Transformer（ViT）输入图像分辨率为 $224\times 224$，patch 大小为 $16\times 16$，并额外添加 1 个 CLS token。则送入 Transformer 编码器的序列长度为}{}
+\qitem{2}{设 Vision Transformer（ViT）输入图像分辨率为 $224\times 224$，patch 大小为 $16\times 16$，并额外添加 1 个 CLS token。则送入 Transformer 编码器的序列长度为}{}
 \fourchoicestwo{$14$}{$196$}{$197$}{$225$}
 
-\qitem{4}{下列多模态大模型架构与其核心连接器（Connector）的匹配，\textbf{正确}的是}{}
-\fourchoices{LLaVA — Q-Former；BLIP-2 — 线性投影层；Flamingo — Perceiver Resampler}{LLaVA — 线性/MLP 投影层；BLIP-2 — Q-Former；Flamingo — 门控交叉注意力层（Gated Cross-Attention）}{三者均采用 Q-Former 作为唯一连接器}{LLaVA — 扩散 U-Net；BLIP-2 — VAE 编码器；Flamingo — CLIP 文本塔}
+\qitem{3}{在 Whisper 音频编码器中，原始音频采样率 16\,kHz，使用 STFT 提取 Log-Mel 梅尔频谱，帧移 Hop Size $=160$ 个采样点；得到梅尔频谱特征序列后，经过两层步长 Stride$=2$ 的一维卷积降采样，送入 Transformer。若一段音频总长 12 秒，求最终输入 Transformer 的 Token 序列长度 $L$：}{}
+\fourchoicestwo{$1200$}{$600$}{$300$}{$150$}
+
+\qitem{4}{Stable Diffusion 属于 Latent Diffusion Model（LDM），其核心设计是}{}
+\fourchoices{直接在原始像素空间 $x\in\mathbb{R}^{H\times W\times 3}$ 上进行 $T$ 步去噪}{先用 VAE 将图像压缩到低维隐空间 $z$，再在隐空间训练扩散去噪网络，大幅降低计算量}{完全放弃 VAE，仅使用 GAN 判别器指导扩散过程}{只在文本嵌入空间做扩散，不生成任何图像}
+
+\needspace{1cm}
 
 \qitem{5}{关于 Early Fusion、Late Fusion 与 Intermediate Fusion（交叉注意力融合），下列判断\textbf{错误}的是}{}
 \fourchoices{Early Fusion 在输入层即将多模态特征拼接或相加，计算简单但模态异质性处理困难}{Late Fusion 各模态独立编码后在决策层融合，模块化强但难以捕获细粒度跨模态交互}{Intermediate Fusion 通过 Cross-Attention 让一种模态的 Query 查询另一种模态的 Key/Value，是 LLaVA、Flamingo 等的主流方案}{Late Fusion 一定优于 Intermediate Fusion，因为避免了跨模态注意力带来的 $O(N_v^2)$ 计算开销}
 
-\qitem{6}{Stable Diffusion 属于 Latent Diffusion Model（LDM），其核心设计是}{}
-\fourchoices{直接在原始像素空间 $x\in\mathbb{R}^{H\times W\times 3}$ 上进行 $T$ 步去噪}{先用 VAE 将图像压缩到低维隐空间 $z$，再在隐空间训练扩散去噪网络，大幅降低计算量}{完全放弃 VAE，仅使用 GAN 判别器指导扩散过程}{只在文本嵌入空间做扩散，不生成任何图像}
+\qitem{6}{下列多模态大模型架构与其核心连接器（Connector）的匹配，\textbf{正确}的是}{}
+\fourchoices{LLaVA — Q-Former；BLIP-2 — 线性投影层；Flamingo — Perceiver Resampler}{LLaVA — 线性/MLP 投影层；BLIP-2 — Q-Former；Flamingo — 门控交叉注意力层（Gated Cross-Attention）}{三者均采用 Q-Former 作为唯一连接器}{LLaVA — 扩散 U-Net；BLIP-2 — VAE 编码器；Flamingo — CLIP 文本塔}
 
 \qitem{7}{关于 DDPM 前向加噪过程 $q(x_t|x_{t-1})=\mathcal{N}(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I)$，下列说法\textbf{正确}的是}{}
 \fourchoices{前向过程是非马尔可夫的，当前状态依赖全部历史步}{当 $t\to T$ 且 $\bar\alpha_t=\prod_{s=1}^{t}(1-\beta_s)\to 0$ 时，$x_T$ 近似服从标准高斯分布}{反向去噪过程 $q(x_{t-1}|x_t)$ 有解析闭式解，可直接采样}{方差调度 $\beta_t$ 必须恒定为常数，否则训练不稳定}
@@ -133,8 +135,10 @@
 \qitem{9}{关于 Flux 文生图模型的底层技术与特性，下列说法\textbf{错误}的是（\quad）}{}
 \fourchoices{Flux 基于 Flow Matching 流匹配范式训练，而非传统 DDPM 扩散损失}{Flux 主干网络采用 DiT（Diffusion Transformer），抛弃了 Stable Diffusion 经典 U-Net 结构}{Flux 原生对图像内文字、人体手部细节生成效果显著优于 SDXL}{Flux 基础版本显存占用低于 SDXL，8G 显存显卡可无压力本地运行}
 
-\qitem{10}{在 Whisper 音频编码器中，原始音频采样率 16\,kHz，使用 STFT 提取 Log-Mel 梅尔频谱，帧移 Hop Size $=160$ 个采样点；得到梅尔频谱特征序列后，经过两层步长 Stride$=2$ 的一维卷积降采样，送入 Transformer。若一段音频总长 12 秒，求最终输入 Transformer 的 Token 序列长度 $L$：}{}
-\fourchoicestwo{$1200$}{$600$}{$300$}{$150$}
+\qitem{10}{关于多模态大模型的三个核心问题——表示（Representation）、对齐（Alignment）与融合（Fusion），下列说法\textbf{正确}的是}{}
+\fourchoices{表示关注如何将不同模态映射到统一语义空间；对齐关注跨模态语义对应关系；融合关注多模态信息在下游任务中的联合利用}{表示、对齐、融合三者完全等价，只是不同论文的命名差异}{融合仅发生在预训练阶段，推理时不再需要跨模态交互}{对齐问题仅存在于图文检索任务，在 VQA 等生成任务中不存在}
+
+\needspace{1cm}
 
 \qitem{11}{文生图领域存在过多种经典底层生成范式：GAN、VAE、离散自回归 Transformer、扩散 Diffusion 模型。下列关于这些架构的描述，\textbf{错误}的是}{}
 \fourchoices{GAN 类文生图（AttnGAN、StackGAN）依靠生成器与判别器对抗训练，单步直接输出图像，无迭代去噪流程；核心痛点是训练易模式崩溃、高分辨率细节生成能力弱}{VAE 类文生图（早期 DALL$\cdot$E 1）基于潜空间概率建模，通过编码器压缩图像、解码器依据文本重建画面；天然存在生成图像偏模糊、纹理表现力不足的缺陷}{离散自回归 Transformer 文生图（Parti、Muse）将图像映射为 VQ-VAE 离散码本，像文本一样逐 Token 串行预测生成；不依赖扩散前向加噪、反向去噪流程}{主流扩散文生图模型里，SD 1.5/XL 的 U-Net 主干、SD3 与 FLUX 的 MMDiT 主干，采用 AdaLN-Zero 完成文本条件的特征调制}
@@ -145,39 +149,24 @@
 % ============ 二、填空题 ============
 \examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
 
-\qitem{13}{设 ViT 输入图像分辨率为 $H=W=384$，patch 大小 $P=16$，使用 1 个 CLS token。则 patch 数量为 $N_v=$ \blank{2cm}，送入 Transformer 的总序列长度为 \blank{2cm}。}{}
+\qitem{13}{BLIP 的 Image-grounded Text Decoder 在训练时，除了对文本部分施加因果掩码（causal mask）外，还允许每个文本 token 关注所有图像 token。设图像 token 数量为 $M$，文本长度为 $L$，则整个注意力矩阵中\textbf{未被掩码}的元素个数为 \blank{3cm}。}{}
 
 \qitem{14}{在 DDIM 中，设噪声调度满足 $\alpha_t=1-0.01t$（$t=0,1,\ldots,100$），且取 $\sigma_t=0$。已知第 50 步的状态 $x_{50}$ 和模型预测的噪声 $\epsilon$，则计算 $x_{49}$ 时，$x_{50}$ 前面的系数为 \blank{3cm}。}{}
 
-\qitem{15}{在 CLIP 批内对比学习中，batch 大小为 $B$ 时，对于样本 $i$，图像到文本方向的 in-batch 负样本数量为 \blank{2cm}；图像—文本相似度矩阵规模为 \blank{2.5cm}。}{}
+\qitem{15}{在 CLIP 中，设 batch 大小为 $B$，则参与 InfoNCE 损失计算的\textbf{负样本对}数为 \blank{2.5cm}。}{}
 
 \qitem{16}{设视觉 token 数 $N_v=576$，隐藏维度 $d=1024$，注意力头数 $h=16$。单层视觉自注意力中，$QK^{\top}$ 矩阵的显存占用（fp16，每元素 2 字节）约为 \blank{3cm} MB（保留整数）。}{}
 
-\qitem{17}{DDPM 前向过程定义 $\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。则 $q(x_t|x_0)$ 的闭式分布为
-\[
-q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
-\]
-}{}
+\qitem{17}{DDPM 前向过程定义 $\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。则 $q(x_t|x_0)$ 的闭式分布为 \blank{3cm}。}{}
 
-\qitem{18}{BLIP-2 中 Q-Former 使用 $N_q$ 个可学习 query token 通过交叉注意力从冻结的视觉编码器输出中抽取特征。若 $N_q=32$，视觉编码器输出序列长度为 $N_v=257$（含 CLS），则 Q-Former 输出的视觉 token 数为 \blank{2cm}；相比直接将 $N_v$ 个 token 送入 LLM，LLM 侧序列长度减少比例为 \blank{3cm}（保留两位小数）。}{}
+\qitem{18}{传统双线性、双三次插值重采样作用于像素空间；而多模态大模型中的视觉重采样连接器如 Q-Former、Perceiver Resampler 则是在 \blank{2.5cm} 空间聚合、压缩视觉语义信息。}{}
 
-\needspace{1cm}
+\needspace{6cm}
 
 % ============ 三、解答题 ============
 \examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
 
 \qitem{19}{（本小题满分 10 分）}{}
-\noindent CLIP 通过批内对比学习实现图文对齐。设 batch 大小为 $B$，L2 归一化后的图像嵌入为 $\mathbf{I}_i$，文本嵌入为 $\mathbf{T}_i$，温度系数为 $\tau$，相似度 $s_{ij}=\mathbf{I}_i^{\top}\mathbf{T}_j/\tau$。
-\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 写出 CLIP 对称 InfoNCE 损失的完整表达式（图像$\to$文本与文本$\to$图像两个方向）；（3 分）
-  \item 分析温度系数 $\tau$ 对 softmax 分布与梯度的影响：$\tau$ 增大和减小时分别有何效果？（3 分）
-  \item 对图像到文本方向，求 $\mathcal{L}_{I\to T}$ 关于正样本 logit $s_{ii}$ 的梯度 $\partial\mathcal{L}_{I\to T}/\partial s_{ii}$，并解释其直觉含义。（4 分）
-\end{enumerate}
-
-\answerlines{6}
-
-\needspace{3cm}
-\qitem{20}{（本小题满分 10 分）}{}
 \noindent 设 ViT 输入图像 $H\times W$，patch 大小 $P\times P$，隐藏维度 $d$，注意力头数 $h$，每头维度 $d_h=d/h$，编码器层数 $L_{\text{enc}}$。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
   \item 推导 patch 数量 $N_v$ 与总序列长度 $N$（含 CLS token）的表达式；（2 分）
@@ -185,9 +174,21 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 若图像分辨率从 $224\times 224$ 提升至 $448\times 448$（$P$ 不变），分析 $N$、单层注意力 FLOPs 及注意力矩阵显存的变化倍数。（4 分）
 \end{enumerate}
 
-\answerlines{8}
+\answerlines{6}
 
 \needspace{3cm}
+
+\qitem{20}{（本小题满分 10 分）}{}
+\noindent CLIP 通过批内对比学习实现图文对齐。设 batch 大小为 $B$，L2 归一化后的图像嵌入为 $\mathbf{I}_i$，文本嵌入为 $\mathbf{T}_i$，温度系数为 $\tau$，相似度 $s_{ij}=\mathbf{I}_i^{\top}\mathbf{T}_j/\tau$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出 CLIP 对称 InfoNCE 损失的完整表达式（图像$\to$文本与文本$\to$图像两个方向）；（3 分）
+  \item 分析温度系数 $\tau$ 对 softmax 分布与梯度的影响：$\tau$ 增大和减小时分别有何效果？（3 分）
+  \item 对图像到文本方向，求 $\mathcal{L}_{I\to T}$ 关于正样本 logit $s_{ii}$ 的梯度 $\partial\mathcal{L}_{I\to T}/\partial s_{ii}$，并解释其直觉含义。（4 分）
+\end{enumerate}
+
+\answerlines{5}
+
+\needspace{2cm}
 \qitem{21}{（本小题满分 10 分）}{}
 \noindent 在多模态大模型中，为了同时处理文本、图像和视频，常采用多维旋转位置编码（RoPE）。假设我们有一个 $2\times 2$ 的图像，像素坐标 $(h,w)$ 分别表示行和列，$h,w\in\{0,1\}$。每个像素的特征向量为 4 维，前 2 维用高度编码，后 2 维用宽度编码。1D RoPE 对二维子向量的变换定义为
 \[
@@ -248,8 +249,8 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
 
 \begin{multicols}{4}
 \begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*,itemsep=0.1em,parsep=0pt,topsep=0pt]
-  \item A
   \item B
+  \item C
   \item C
   \item B
   \item D
@@ -257,24 +258,25 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
   \item B
   \item A
   \item D
-  \item C
+  \item A
   \item D
   \item B
 \end{enumerate}
 \end{multicols}
 
 \vspace{0.3cm}
-\noindent\textbf{1. A}\quad 多模态三要素：表示解决"如何编码各模态"；对齐解决"不同模态语义如何对应"；融合解决"多模态信息如何联合用于下游任务"。三者递进且相互关联。B 错误：三者含义不同；C 错误：推理时仍需 cross-attention 等融合；D 错误：VQA 等生成任务同样需要对齐。
 
-\noindent\textbf{2. B}\quad CLIP 采用图像编码器与文本编码器双塔结构，批内 $B$ 个图文对构成 $B\times B$ 相似度矩阵，对角线为正样本、非对角线为负样本，用 InfoNCE 对比损失训练。A 描述的是单塔融合架构；C 是像素级重建而非语义对齐；D 错误：ViT 可通过插值泛化到其他分辨率。
+\noindent\textbf{1. B}\quad CLIP 采用图像编码器与文本编码器双塔结构，批内 $B$ 个图文对构成 $B\times B$ 相似度矩阵，对角线为正样本、非对角线为负样本，用 InfoNCE 对比损失训练。A 描述的是单塔融合架构；C 是像素级重建而非语义对齐；D 错误：ViT 可通过插值泛化到其他分辨率。
 
-\noindent\textbf{3. C}\quad Patch 数量 $N_v=(224/16)^2=14^2=196$，加 1 个 CLS token 后总序列长度 $N=196+1=197$。
+\noindent\textbf{2. C}\quad Patch 数量 $N_v=(224/16)^2=14^2=196$，加 1 个 CLS token 后总序列长度 $N=196+1=197$。
 
-\noindent\textbf{4. B}\quad LLaVA 用线性或 MLP 将 ViT 输出投影到 LLM 词嵌入空间；BLIP-2 用 Q-Former（可学习 query + 交叉注意力）桥接冻结 ViT 与 LLM；Flamingo 在 LLM 层间插入门控交叉注意力，使文本 token 查询视觉特征。
+\noindent\textbf{3. C}\quad 采样率 $16\,\text{kHz}=16000\,\text{Hz}$，帧移 $160$ 采样点，梅尔帧率 $=16000/160=100$ 帧/秒。12 秒音频对应 $12\times 100=1200$ 帧 Mel 特征。经两层 Stride$=2$ 一维卷积，长度依次减半：$1200\to 600\to 300$，故 $L=300$，选 C。A 为未卷积降采样长度；B 为仅一层 Stride$=2$；D 为三层降采样结果。
+
+\noindent\textbf{4. B}\quad LDM 先用 VAE 编码器将图像压缩为低维 $z$（如 $64\times 64\times 4$），在 $z$ 空间训练 U-Net 去噪，解码时用 VAE 解码器还原图像，计算量远低于像素空间扩散。
 
 \noindent\textbf{5. D}\quad Late Fusion 虽简单，但无法在中间层捕获细粒度跨模态交互（如"图中红色物体"与"the red object"的 token 级对齐），Intermediate Fusion 在 VQA、Caption 等任务上通常更优。A、B、C 均为正确描述。
 
-\noindent\textbf{6. B}\quad LDM 先用 VAE 编码器将图像压缩为低维 $z$（如 $64\times 64\times 4$），在 $z$ 空间训练 U-Net 去噪，解码时用 VAE 解码器还原图像，计算量远低于像素空间扩散。
+\noindent\textbf{6. B}\quad LLaVA 用线性或 MLP 将 ViT 输出投影到 LLM 词嵌入空间；BLIP-2 用 Q-Former（可学习 query + 交叉注意力）桥接冻结 ViT 与 LLM；Flamingo 在 LLM 层间插入门控交叉注意力，使文本 token 查询视觉特征。
 
 \noindent\textbf{7. B}\quad 前向过程是马尔可夫链；当 $t\to T$，$\bar\alpha_t\to 0$，$x_t$ 近似 $\mathcal{N}(0,I)$。反向 $q(x_{t-1}|x_t)$ 未知，需学习 $p_\theta(x_{t-1}|x_t)$；$\beta_t$ 通常采用线性或 cosine 调度，非常数。
 
@@ -282,7 +284,7 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
 
 \noindent\textbf{9. D}\quad FLUX 采用 Rectified Flow / Flow Matching 训练目标，区别于经典 DDPM 噪声预测损失；FLUX 为 Transformer 扩散主干（MMDiT 风格），非 SD 系列 U-Net；FLUX 在文字渲染、手部等细节场景口碑普遍优于 SDXL；FLUX.1 系列参数量与激活显存开销通常\textbf{高于} SDXL，本地推理常见需求为 12GB 及以上显存。
 
-\noindent\textbf{10. C}\quad 采样率 $16\,\text{kHz}=16000\,\text{Hz}$，帧移 $160$ 采样点，梅尔帧率 $=16000/160=100$ 帧/秒。12 秒音频对应 $12\times 100=1200$ 帧 Mel 特征。经两层 Stride$=2$ 一维卷积，长度依次减半：$1200\to 600\to 300$，故 $L=300$，选 C。A 为未卷积降采样长度；B 为仅一层 Stride$=2$；D 为三层降采样结果。
+\noindent\textbf{10. A}\quad 多模态三要素：表示解决"如何编码各模态"；对齐解决"不同模态语义如何对应"；融合解决"多模态信息如何联合用于下游任务"。三者递进且相互关联。B 错误：三者含义不同；C 错误：推理时仍需 cross-attention 等融合；D 错误：VQA 等生成任务同样需要对齐。
 
 \noindent\textbf{11. D}\quad A、B、C 均为正确描述：GAN 对抗单步生成、易模式崩溃；VAE/早期 DALL$\cdot$E 潜空间重建偏模糊；Parti/Muse 等 VQ 离散 token 自回归、不经扩散去噪。D 错误：\textbf{AdaLN-Zero} 是 DiT（Diffusion Transformer）中的文本/条件调制方式；SD 1.5/XL 的 U-Net 主干主要通过\textbf{交叉注意力（Cross-Attention）}注入文本条件，而非 AdaLN-Zero。SD3 的 MMDiT、FLUX 等虽为 Transformer 扩散主干，其条件注入机制也与「全体主流模型均借助 AdaLN-Zero」的表述不符。
 
@@ -290,11 +292,21 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
 
 \subsection*{\heiti 二、填空题答案}
 
-\noindent\textbf{13.}\quad $N_v=(384/16)^2=24^2=576$\quad ；\quad 总序列长度 $N=576+1=577$。
+\noindent\textbf{13.}\quad $M^2+ML+\dfrac{L(L+1)}{2}$。序列排列为 $M$ 个图像 token 在前、$L$ 个文本 token 在后，注意力矩阵规模为 $(M+L)\times(M+L)$。掩码规则为：（i）图像部分不施加因果掩码，图像 token 彼此可见；（ii）文本部分施加因果掩码；（iii）每个文本 token 可关注全部 $M$ 个图像 token；图像 token 不关注文本 token。
 
-\noindent\textbf{14.}\quad $\sqrt{\dfrac{\alpha_{49}}{\alpha_{50}}}=\sqrt{\dfrac{0.51}{0.5}}=\sqrt{\dfrac{51}{50}}\approx 1.01$。
+分块统计未被掩码元素：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item \textbf{图像$\to$图像}（$M\times M$）：双向可见，共 $M^2$ 个；
+  \item \textbf{图像$\to$文本}（$M\times L$）：全部掩码，$0$ 个；
+  \item \textbf{文本$\to$图像}（$L\times M$）：每个文本 token 可见全部图像，共 $L\times M=ML$ 个；
+  \item \textbf{文本$\to$文本}（$L\times L$）：因果下三角，共 $1+2+\cdots+L=\dfrac{L(L+1)}{2}$ 个。
+\end{itemize}
+合计
+\[
+M^2+ML+\frac{L(L+1)}{2}.
+\]
 
-\textbf{推导：}DDIM 在 $\sigma_t=0$（确定性采样）时，
+\noindent\textbf{14.}\quad $\sqrt{\dfrac{51}{50}}$。DDIM 在 $\sigma_t=0$（确定性采样）时，
 \[
 x_{t-1}=\sqrt{\alpha_{t-1}}\,\hat x_0+\sqrt{1-\alpha_{t-1}}\,\epsilon,\qquad
 \hat x_0=\frac{x_t-\sqrt{1-\alpha_t}\,\epsilon}{\sqrt{\alpha_t}}.
@@ -305,13 +317,13 @@ x_{t-1}=\sqrt{\frac{\alpha_{t-1}}{\alpha_t}}\,x_t+\left(\sqrt{1-\alpha_{t-1}}-\s
 \]
 故 $x_{50}$ 的系数为 $\sqrt{\alpha_{49}/\alpha_{50}}$。由 $\alpha_t=1-0.01t$ 得 $\alpha_{50}=0.5$，$\alpha_{49}=0.51$，系数 $=\sqrt{0.51/0.5}=\sqrt{51/50}$。
 
-\noindent\textbf{15.}\quad 负样本数 $=B-1$\quad ；\quad 相似度矩阵规模 $=B\times B$。
+\noindent\textbf{15.}\quad $B(B-1)$。一个 batch 含 $B$ 个图文匹配对，共可构成 $B\times B=B^2$ 个图像—文本配对。其中对角线上的 $B$ 个为正样本对 $(i,i)$；其余非对角线元素 $(i,j)$（$i\neq j$）为负样本对，共 $B^2-B=B(B-1)$ 个。CLIP 对称 InfoNCE 在图像$\to$文本与文本$\to$图像两个方向均使用同一批内 $B\times B$ 相似度矩阵，负样本对即该矩阵中的全部非对角元素。
 
 \noindent\textbf{16.}\quad $QK^{\top}$ 规模为 $576\times 576$，fp16 显存 $=576^2\times 2=663\,552$ 字节 $\approx 0.66$ MB，保留整数为 $\boxed{1}$ MB。
 
-\noindent\textbf{17.}\quad 均值 $\sqrt{\bar\alpha_t}\,x_0$\quad ；\quad 方差 $(1-\bar\alpha_t)I$（或协方差矩阵 $(1-\bar\alpha_t)I$）。
+\noindent\textbf{17.}\quad $q(x_t|x_0)=\mathcal{N}\!\left(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I\right)$。
 
-\noindent\textbf{18.}\quad 输出视觉 token 数 $=32$\quad ；\quad 减少比例 $=1-32/257\approx 0.88$（或 $(257-32)/257\approx 0.88$）。
+\noindent\textbf{18.}\quad \textbf{特征}（或\textbf{语义特征}/\textbf{表征}）。
 
 \subsection*{\heiti 三、解答题答案}
 
@@ -438,13 +450,13 @@ K(x,y)=\int_{-\infty}^{\infty}\phi(x,\omega)\,\overline{\phi(y,\omega)}\,\mathrm
 \]
 内积仅依赖\textbf{相对位置 $x-y$}。离散 RoPE 用有限频率 $\theta_k$ 逼近该核，得 $K(x,y)\approx\sum_k\cos((x-y)\theta_k)$，与 (1)(2) 中 $\cos\theta$、$\sin\theta$ 的旋转形式一致。（推导毕）
 
-\end{document}
-
 \subsubsection*{22. LLaVA 架构与训练（10 分）}
 
 \noindent\textbf{(1) 数据流（4 分）}
 
-图像 $\to$ ViT $\to$ $[N_v\times d_v]$ $\to$ 投影器（Linear/MLP）$\to$ $[N_v\times d_{\text{LLM}}]$ $\to$ 与文本 token 嵌入拼接 $\to$ LLM 自回归生成。投影器将视觉特征映射到 LLM 词嵌入空间。
+原始图像 $\to$ 视觉编码器 $\to$ 投影器 $\to$ LLM（结合文本输入）$\to$ LLM 自回归输出。
+
+各阶段张量维度：图像经 ViT 编码为 $[N_v\times d_v]$；投影器映射为 $[N_v\times d_{\text{LLM}}]$，再与文本 token 嵌入拼接后送入 LLM。其中 $N_v$ 为视觉 token 数（如 patch 数 + CLS），$d_v$ 为视觉编码器隐藏维度，$d_{\text{LLM}}$ 为 LLM 词嵌入维度。
 
 \noindent\textbf{(2) 两阶段对比（3 分）}
 
@@ -578,3 +590,5 @@ p_\theta(x_{t-1}|x_t)=\mathcal{N}\!\big(\mu_\theta(x_t,t),\,\sigma_t^2 I\big)
 \boxed{\mathcal{L}_{\text{simple}}=\mathbb{E}_{t\sim\mathcal{U}\{1,\ldots,T\},\,x_0,\,\epsilon}\!\left[\left\|\epsilon-\epsilon_\theta(x_t,t)\right\|^2\right].}
 \]
 相比完整 VLB：（i）\textbf{实现简单}，只需对加噪样本回归噪声；（ii）\textbf{训练稳定}，各 $t$ 步梯度尺度更均衡；（iii）\textbf{效果相当}，实践中与加权 VLB 生成质量接近。Stable Diffusion 等 latent 扩散模型在隐空间 $z$ 上沿用同一套 $\epsilon$-prediction 范式。（推导毕）
+
+\end{document}
