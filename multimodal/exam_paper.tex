@@ -161,6 +161,8 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
 
 \qitem{18}{BLIP-2 中 Q-Former 使用 $N_q$ 个可学习 query token 通过交叉注意力从冻结的视觉编码器输出中抽取特征。若 $N_q=32$，视觉编码器输出序列长度为 $N_v=257$（含 CLS），则 Q-Former 输出的视觉 token 数为 \blank{2cm}；相比直接将 $N_v$ 个 token 送入 LLM，LLM 侧序列长度减少比例为 \blank{3cm}（保留两位小数）。}{}
 
+\needspace{1cm}
+
 % ============ 三、解答题 ============
 \examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
 
@@ -172,9 +174,9 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 对图像到文本方向，求 $\mathcal{L}_{I\to T}$ 关于正样本 logit $s_{ii}$ 的梯度 $\partial\mathcal{L}_{I\to T}/\partial s_{ii}$，并解释其直觉含义。（4 分）
 \end{enumerate}
 
-\answerlines{10}
+\answerlines{6}
 
-\needspace{6cm}
+\needspace{3cm}
 \qitem{20}{（本小题满分 10 分）}{}
 \noindent 设 ViT 输入图像 $H\times W$，patch 大小 $P\times P$，隐藏维度 $d$，注意力头数 $h$，每头维度 $d_h=d/h$，编码器层数 $L_{\text{enc}}$。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
@@ -183,14 +185,20 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
   \item 若图像分辨率从 $224\times 224$ 提升至 $448\times 448$（$P$ 不变），分析 $N$、单层注意力 FLOPs 及注意力矩阵显存的变化倍数。（4 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{8}
 
-\needspace{6cm}
+\needspace{3cm}
 \qitem{21}{（本小题满分 10 分）}{}
-\noindent 设 DDPM 前向过程为 $q(x_t|x_{t-1})=\mathcal{N}(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I)$，$\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。
+\noindent 在多模态大模型中，为了同时处理文本、图像和视频，常采用多维旋转位置编码（RoPE）。假设我们有一个 $2\times 2$ 的图像，像素坐标 $(h,w)$ 分别表示行和列，$h,w\in\{0,1\}$。每个像素的特征向量为 4 维，前 2 维用高度编码，后 2 维用宽度编码。1D RoPE 对二维子向量的变换定义为
+\[
+R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
+=\begin{pmatrix}a\cos\theta-b\sin\theta\\ a\sin\theta+b\cos\theta\end{pmatrix}.
+\]
+设高度基频 $\omega_h=4\pi$，宽度基频 $\omega_w=2\pi$。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 利用马尔可夫性质与重参数化技巧，推导 $q(x_t|x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I)$ 的完整过程；（5 分）
-  \item 说明为何训练目标可简化为 $\mathcal{L}_{\text{simple}}=\mathbb{E}_{t,x_0,\epsilon}\big[\|\epsilon-\epsilon_\theta(x_t,t)\|^2\big]$，其中 $x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$，$\epsilon\sim\mathcal{N}(0,I)$。（5 分）
+  \item 已知某像素位于坐标 $(1,0)$，其原始特征向量为 $\mathbf{v}=[1,0,0,1]^{\top}$，求经过 2D RoPE 编码后的向量。（3 分）
+  \item 已知一段 2 帧视频，每帧大小为 $2\times 2$，体素坐标 $(t,h,w)$，$t\in\{0,1\}$。现采用 M-RoPE，将特征向量拆分为时间、高度、宽度三组，每组 2 维。基频分别为 $\omega_t=3\pi$，$\omega_h=4\pi$，$\omega_w=2\pi$。某体素位于 $(1,0,1)$，原始特征向量为 $\mathbf{u}=[1,0,0,1,1,0]^{\top}$（依次对应时间、高度、宽度组），求 M-RoPE 编码后的向量。（3 分）
+  \item 将坐标 $x$ 视为连续变量，频率 $\omega$ 取遍所有实数，且各频率权重相等。于是位置 $x$ 的编码向量（忽略幅度）可视为函数 $\phi(x)=e^{i\omega x}$ 关于 $\omega$ 的连续族。对于任意两个位置 $x$ 和 $y$，求它们的编码内积 $K(x,y)$。（4 分）
 \end{enumerate}
 
 \answerlines{12}
@@ -218,17 +226,11 @@ q(x_t|x_0)=\mathcal{N}\!\left(\blank{4cm},\;\blank{4cm}\right).
 \answerlines{5}
 
 \needspace{6cm}
-\qitem{24}{（本小题满分 10 分，压轴）}{}
-\noindent 在多模态大模型中，为了同时处理文本、图像和视频，常采用多维旋转位置编码（RoPE）。假设我们有一个 $2\times 2$ 的图像，像素坐标 $(h,w)$ 分别表示行和列，$h,w\in\{0,1\}$。每个像素的特征向量为 4 维，前 2 维用高度编码，后 2 维用宽度编码。1D RoPE 对二维子向量的变换定义为
-\[
-R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
-=\begin{pmatrix}a\cos\theta-b\sin\theta\\ a\sin\theta+b\cos\theta\end{pmatrix}.
-\]
-设高度基频 $\omega_h=4\pi$，宽度基频 $\omega_w=2\pi$。
+\qitem{24}{（本小题满分 10 分）}{}
+\noindent 设 DDPM 前向过程为 $q(x_t|x_{t-1})=\mathcal{N}(\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I)$，$\alpha_t=1-\beta_t$，$\bar\alpha_t=\prod_{s=1}^{t}\alpha_s$。
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 已知某像素位于坐标 $(1,0)$，其原始特征向量为 $\mathbf{v}=[1,0,0,1]^{\top}$，求经过 2D RoPE 编码后的向量。（3 分）
-  \item 已知一段 2 帧视频，每帧大小为 $2\times 2$，体素坐标 $(t,h,w)$，$t\in\{0,1\}$。现采用 M-RoPE，将特征向量拆分为时间、高度、宽度三组，每组 2 维。基频分别为 $\omega_t=3\pi$，$\omega_h=4\pi$，$\omega_w=2\pi$。某体素位于 $(1,0,1)$，原始特征向量为 $\mathbf{u}=[1,0,0,1,1,0]^{\top}$（依次对应时间、高度、宽度组），求 M-RoPE 编码后的向量。（3 分）
-  \item 将坐标 $x$ 视为连续变量，频率 $\omega$ 取遍所有实数，且各频率权重相等。于是位置 $x$ 的编码向量（忽略幅度）可视为函数 $\phi(x)=e^{i\omega x}$ 关于 $\omega$ 的连续族。对于任意两个位置 $x$ 和 $y$，求它们的编码内积 $K(x,y)$。（4 分）
+  \item 利用马尔可夫性质与重参数化技巧，推导 $q(x_t|x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I)$ 的完整过程；（5 分）
+  \item 说明为何训练目标可简化为 $\mathcal{L}_{\text{simple}}=\mathbb{E}_{t,x_0,\epsilon}\big[\|\epsilon-\epsilon_\theta(x_t,t)\|^2\big]$，其中 $x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon$，$\epsilon\sim\mathcal{N}(0,I)$。（5 分）
 \end{enumerate}
 
 \answerlines{12}
@@ -351,7 +353,123 @@ $Q,K,V$ 投影：各 $2Nd^2$，共 $6Nd^2$。$S=QK^{\top}$：$2N^2 d$。$O=\math
 
 $224\to 448$：$N_v$ 从 $14^2=196$ 增至 $28^2=784$，约 4 倍。$N$ 从 197 增至 785。注意力 FLOPs 中 $N^2 d$ 项增约 $4^2=16$ 倍，$Nd^2$ 项增 4 倍；显存 $N\times N$ 注意力矩阵增 16 倍。故高分辨率是视觉 token 爆炸的主要来源。
 
-\subsubsection*{21. 扩散模型推导（10 分）}
+\subsubsection*{21. 2D RoPE / M-RoPE 计算与连续核（10 分）}
+
+\noindent\textbf{(1) 2D RoPE 编码（3 分）}
+
+像素坐标 $(h,w)=(1,0)$，$\mathbf{v}=[v_1,v_2,v_3,v_4]^{\top}=[1,0,0,1]^{\top}$。2D RoPE 对高度、宽度子向量分别施加旋转，旋转角为坐标乘以对应基频：
+\[
+\theta_h=h\,\omega_h=1\times 4\pi=4\pi,\qquad
+\theta_w=w\,\omega_w=0\times 2\pi=0.
+\]
+
+\textbf{高度组}（前两维 $[1,0]^{\top}$）：
+\[
+R_{4\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}\cos 4\pi\cdot 1-\sin 4\pi\cdot 0\\ \sin 4\pi\cdot 1+\cos 4\pi\cdot 0\end{pmatrix}
+=\begin{pmatrix}1\\0\end{pmatrix}.
+\]
+
+\textbf{宽度组}（后两维 $[0,1]^{\top}$）：
+\[
+R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
+=\begin{pmatrix}\cos 0\cdot 0-\sin 0\cdot 1\\ \sin 0\cdot 0+\cos 0\cdot 1\end{pmatrix}
+=\begin{pmatrix}0\\1\end{pmatrix}.
+\]
+
+拼接得
+\[
+\boxed{\mathbf{v}'=[1,\,0,\,0,\,1]^{\top}.}
+\]
+（本例中 $4\pi$ 与 $0$ 角均为 $2\pi$ 整数倍，旋转退化为恒等变换。）
+
+\noindent\textbf{(2) M-RoPE 编码（3 分）}
+
+体素坐标 $(t,h,w)=(1,0,1)$，$\mathbf{u}=[u_1,u_2,u_3,u_4,u_5,u_6]^{\top}=[1,0,0,1,1,0]^{\top}$。三组旋转角：
+\[
+\theta_t=t\,\omega_t=3\pi,\qquad
+\theta_h=h\,\omega_h=0,\qquad
+\theta_w=w\,\omega_w=2\pi.
+\]
+
+\textbf{时间组} $[1,0]^{\top}$：$\cos 3\pi=-1$，$\sin 3\pi=0$，
+\[
+R_{3\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}-1\\0\end{pmatrix}.
+\]
+
+\textbf{高度组} $[0,1]^{\top}$：$\theta_h=0$，
+\[
+R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
+=\begin{pmatrix}0\\1\end{pmatrix}.
+\]
+
+\textbf{宽度组} $[1,0]^{\top}$：$\cos 2\pi=1$，$\sin 2\pi=0$，
+\[
+R_{2\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
+=\begin{pmatrix}1\\0\end{pmatrix}.
+\]
+
+拼接得
+\[
+\boxed{\mathbf{u}'=[-1,\,0,\,0,\,1,\,1,\,0]^{\top}.}
+\]
+
+\noindent\textbf{(3) 连续频率编码内积 $K(x,y)$（4 分）}
+
+\textbf{Step 1：定义内积核。}
+\[
+K(x,y)=\int_{-\infty}^{\infty}\phi(x,\omega)\,\overline{\phi(y,\omega)}\,\mathrm{d}\omega
+=\int_{-\infty}^{\infty}e^{i\omega x}\,e^{-i\omega y}\,\mathrm{d}\omega
+=\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega.
+\]
+
+\textbf{Step 2：傅里叶逆变换。}
+
+在分布（广义函数）意义下：
+\[
+\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega=2\pi\,\delta(x-y).
+\]
+其中 $\delta(\cdot)$ 为\textbf{狄拉克函数}。
+
+\textbf{Step 3：结论与意义。}
+\[
+\boxed{K(x,y)=2\pi\,\delta(x-y).}
+\]
+内积仅依赖\textbf{相对位置 $x-y$}。离散 RoPE 用有限频率 $\theta_k$ 逼近该核，得 $K(x,y)\approx\sum_k\cos((x-y)\theta_k)$，与 (1)(2) 中 $\cos\theta$、$\sin\theta$ 的旋转形式一致。（推导毕）
+
+\end{document}
+
+\subsubsection*{22. LLaVA 架构与训练（10 分）}
+
+\noindent\textbf{(1) 数据流（4 分）}
+
+图像 $\to$ ViT $\to$ $[N_v\times d_v]$ $\to$ 投影器（Linear/MLP）$\to$ $[N_v\times d_{\text{LLM}}]$ $\to$ 与文本 token 嵌入拼接 $\to$ LLM 自回归生成。投影器将视觉特征映射到 LLM 词嵌入空间。
+
+\noindent\textbf{(2) 两阶段对比（3 分）}
+
+阶段一：冻结 ViT 与 LLM，只训练投影器，用图文对（如 CC3M）做 next-token 预测，学习视觉—语言对齐。阶段二：解冻 LLM（或 LoRA），用指令数据（VQA、对话）端到端微调，学习遵循指令与推理。
+
+\noindent\textbf{(3) Token 预算（3 分）}
+
+视觉占比 $=576/(576+200)\approx 74\%$。高分辨率时 $N_v$ 可超 2k，易占满 4k 上下文，需 AnyRes 切图后选择性编码，或 2$\times$2 pooling 合并 token，或 Q-Former 压缩。
+
+\subsubsection*{23. Q-Former 与 Perceiver Resampler（10 分）}
+
+\noindent\textbf{(1) Q-Former 结构（4 分）}
+
+$N_q$ 个可学习 query $\mathbf{Q}\in\mathbb{R}^{N_q\times d}$ 作为 Query，ViT 输出 $H_v$ 作为 Key/Value，经 Cross-Attention：$\text{Attn}(\mathbf{Q},H_v,H_v)$，输出 $N_q$ 个视觉 token。ViT 冻结，只训练 Q-Former 与后续 LLM 接口。
+
+\noindent\textbf{(2) 异同（3 分）}
+
+Q-Former：独立 BERT 式模块，输出接 LLM 投影；Flamingo Perceiver Resampler：在 Flamingo 框架内，用固定数量 latent 查询视觉特征，输出注入 LLM 交叉注意力层。二者均为"少量 query + Cross-Attn"压缩，但集成方式不同。
+
+\noindent\textbf{(3) KV Cache 节省（3 分）}
+
+LLM KV Cache 与序列长度成正比。直接输入：$N_v=1024$；压缩后：$N_q=64$。节省倍数 $=1024/64=16$。32 层 fp16：约 $2\times L\times N\times d\times 2$ 字节，序列减 16 倍则 KV Cache 减 16 倍。
+
+
+\subsubsection*{24. 扩散模型推导（10 分）}
 
 \noindent\textbf{(1) $q(x_t|x_0)$ 闭式解推导（5 分）}
 
@@ -460,118 +578,3 @@ p_\theta(x_{t-1}|x_t)=\mathcal{N}\!\big(\mu_\theta(x_t,t),\,\sigma_t^2 I\big)
 \boxed{\mathcal{L}_{\text{simple}}=\mathbb{E}_{t\sim\mathcal{U}\{1,\ldots,T\},\,x_0,\,\epsilon}\!\left[\left\|\epsilon-\epsilon_\theta(x_t,t)\right\|^2\right].}
 \]
 相比完整 VLB：（i）\textbf{实现简单}，只需对加噪样本回归噪声；（ii）\textbf{训练稳定}，各 $t$ 步梯度尺度更均衡；（iii）\textbf{效果相当}，实践中与加权 VLB 生成质量接近。Stable Diffusion 等 latent 扩散模型在隐空间 $z$ 上沿用同一套 $\epsilon$-prediction 范式。（推导毕）
-
-\subsubsection*{22. LLaVA 架构与训练（10 分）}
-
-\noindent\textbf{(1) 数据流（4 分）}
-
-图像 $\to$ ViT $\to$ $[N_v\times d_v]$ $\to$ 投影器（Linear/MLP）$\to$ $[N_v\times d_{\text{LLM}}]$ $\to$ 与文本 token 嵌入拼接 $\to$ LLM 自回归生成。投影器将视觉特征映射到 LLM 词嵌入空间。
-
-\noindent\textbf{(2) 两阶段对比（3 分）}
-
-阶段一：冻结 ViT 与 LLM，只训练投影器，用图文对（如 CC3M）做 next-token 预测，学习视觉—语言对齐。阶段二：解冻 LLM（或 LoRA），用指令数据（VQA、对话）端到端微调，学习遵循指令与推理。
-
-\noindent\textbf{(3) Token 预算（3 分）}
-
-视觉占比 $=576/(576+200)\approx 74\%$。高分辨率时 $N_v$ 可超 2k，易占满 4k 上下文，需 AnyRes 切图后选择性编码，或 2$\times$2 pooling 合并 token，或 Q-Former 压缩。
-
-\subsubsection*{23. Q-Former 与 Perceiver Resampler（10 分）}
-
-\noindent\textbf{(1) Q-Former 结构（4 分）}
-
-$N_q$ 个可学习 query $\mathbf{Q}\in\mathbb{R}^{N_q\times d}$ 作为 Query，ViT 输出 $H_v$ 作为 Key/Value，经 Cross-Attention：$\text{Attn}(\mathbf{Q},H_v,H_v)$，输出 $N_q$ 个视觉 token。ViT 冻结，只训练 Q-Former 与后续 LLM 接口。
-
-\noindent\textbf{(2) 异同（3 分）}
-
-Q-Former：独立 BERT 式模块，输出接 LLM 投影；Flamingo Perceiver Resampler：在 Flamingo 框架内，用固定数量 latent 查询视觉特征，输出注入 LLM 交叉注意力层。二者均为"少量 query + Cross-Attn"压缩，但集成方式不同。
-
-\noindent\textbf{(3) KV Cache 节省（3 分）}
-
-LLM KV Cache 与序列长度成正比。直接输入：$N_v=1024$；压缩后：$N_q=64$。节省倍数 $=1024/64=16$。32 层 fp16：约 $2\times L\times N\times d\times 2$ 字节，序列减 16 倍则 KV Cache 减 16 倍。
-
-\subsubsection*{24. 2D RoPE / M-RoPE 计算与连续核（10 分，压轴）}
-
-\noindent\textbf{(1) 2D RoPE 编码（3 分）}
-
-像素坐标 $(h,w)=(1,0)$，$\mathbf{v}=[v_1,v_2,v_3,v_4]^{\top}=[1,0,0,1]^{\top}$。2D RoPE 对高度、宽度子向量分别施加旋转，旋转角为坐标乘以对应基频：
-\[
-\theta_h=h\,\omega_h=1\times 4\pi=4\pi,\qquad
-\theta_w=w\,\omega_w=0\times 2\pi=0.
-\]
-
-\textbf{高度组}（前两维 $[1,0]^{\top}$）：
-\[
-R_{4\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
-=\begin{pmatrix}\cos 4\pi\cdot 1-\sin 4\pi\cdot 0\\ \sin 4\pi\cdot 1+\cos 4\pi\cdot 0\end{pmatrix}
-=\begin{pmatrix}1\\0\end{pmatrix}.
-\]
-
-\textbf{宽度组}（后两维 $[0,1]^{\top}$）：
-\[
-R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
-=\begin{pmatrix}\cos 0\cdot 0-\sin 0\cdot 1\\ \sin 0\cdot 0+\cos 0\cdot 1\end{pmatrix}
-=\begin{pmatrix}0\\1\end{pmatrix}.
-\]
-
-拼接得
-\[
-\boxed{\mathbf{v}'=[1,\,0,\,0,\,1]^{\top}.}
-\]
-（本例中 $4\pi$ 与 $0$ 角均为 $2\pi$ 整数倍，旋转退化为恒等变换。）
-
-\noindent\textbf{(2) M-RoPE 编码（3 分）}
-
-体素坐标 $(t,h,w)=(1,0,1)$，$\mathbf{u}=[u_1,u_2,u_3,u_4,u_5,u_6]^{\top}=[1,0,0,1,1,0]^{\top}$。三组旋转角：
-\[
-\theta_t=t\,\omega_t=3\pi,\qquad
-\theta_h=h\,\omega_h=0,\qquad
-\theta_w=w\,\omega_w=2\pi.
-\]
-
-\textbf{时间组} $[1,0]^{\top}$：$\cos 3\pi=-1$，$\sin 3\pi=0$，
-\[
-R_{3\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
-=\begin{pmatrix}-1\\0\end{pmatrix}.
-\]
-
-\textbf{高度组} $[0,1]^{\top}$：$\theta_h=0$，
-\[
-R_{0}\!\begin{pmatrix}0\\1\end{pmatrix}
-=\begin{pmatrix}0\\1\end{pmatrix}.
-\]
-
-\textbf{宽度组} $[1,0]^{\top}$：$\cos 2\pi=1$，$\sin 2\pi=0$，
-\[
-R_{2\pi}\!\begin{pmatrix}1\\0\end{pmatrix}
-=\begin{pmatrix}1\\0\end{pmatrix}.
-\]
-
-拼接得
-\[
-\boxed{\mathbf{u}'=[-1,\,0,\,0,\,1,\,1,\,0]^{\top}.}
-\]
-
-\noindent\textbf{(3) 连续频率编码内积 $K(x,y)$（4 分）}
-
-\textbf{Step 1：定义内积核。}
-\[
-K(x,y)=\int_{-\infty}^{\infty}\phi(x,\omega)\,\overline{\phi(y,\omega)}\,\mathrm{d}\omega
-=\int_{-\infty}^{\infty}e^{i\omega x}\,e^{-i\omega y}\,\mathrm{d}\omega
-=\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega.
-\]
-
-\textbf{Step 2：傅里叶逆变换。}
-
-在分布（广义函数）意义下：
-\[
-\int_{-\infty}^{\infty}e^{i\omega(x-y)}\,\mathrm{d}\omega=2\pi\,\delta(x-y).
-\]
-其中 $\delta(\cdot)$ 为\textbf{狄拉克函数}。
-
-\textbf{Step 3：结论与意义。}
-\[
-\boxed{K(x,y)=2\pi\,\delta(x-y).}
-\]
-内积仅依赖\textbf{相对位置 $x-y$}。离散 RoPE 用有限频率 $\theta_k$ 逼近该核，得 $K(x,y)\approx\sum_k\cos((x-y)\theta_k)$，与 (1)(2) 中 $\cos\theta$、$\sin\theta$ 的旋转形式一致。（推导毕）
-
-\end{document}
