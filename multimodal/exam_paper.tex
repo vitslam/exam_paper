@@ -130,14 +130,14 @@
 \qitem{8}{关于 VQ-VAE / VQ-GAN 中离散视觉 Token 化的机制，下列说法\textbf{正确}的是}{}
 \fourchoices{Codebook 中每个向量通过 argmax 操作被选中，梯度可通过 Straight-Through Estimator 近似回传}{离散化后图像无法用 Transformer 建模，必须退回 CNN}{VQ 损失仅包含重建损失，不含 codebook 与 commitment 项}{Codebook 大小对生成质量无影响，越大越好且无需担心码本利用率}
 
-\qitem{9}{CLIP 实现 Zero-shot 图像分类时，对 $C$ 个类别通常构造 $C$ 个文本 prompt（如 ``a photo of a \{class\}''），预测类别为}{}
-\fourchoices{与图像嵌入余弦相似度最大的文本嵌入所对应的类别}{图像嵌入与各类别 one-hot 向量点积最大者}{对 $C$ 个 prompt 的文本嵌入取平均后，与图像嵌入做 L2 距离最小者}{随机从 $C$ 个类别中采样，与 CLIP 无关}
+\qitem{9}{关于 Flux 文生图模型的底层技术与特性，下列说法\textbf{错误}的是（\quad）}{}
+\fourchoices{Flux 基于 Flow Matching 流匹配范式训练，而非传统 DDPM 扩散损失}{Flux 主干网络采用 DiT（Diffusion Transformer），抛弃了 Stable Diffusion 经典 U-Net 结构}{Flux 原生对图像内文字、人体手部细节生成效果显著优于 SDXL}{Flux 基础版本显存占用低于 SDXL，8G 显存显卡可无压力本地运行}
 
-\qitem{10}{Qwen-VL 等模型采用 M-RoPE（Multimodal Rotary Position Embedding）处理图文混合序列，其核心思想是}{}
-\fourchoices{对文本 token 使用 1D 位置编码，对视觉 token 使用 2D 空间位置编码（行、列），并在注意力中分别施加旋转}{所有模态共享同一套绝对正弦位置编码，不区分文本与图像}{完全取消位置编码，依赖 CLIP 预训练权重隐式编码位置}{仅对 CLS token 施加 RoPE，patch token 不加位置信息}
+\qitem{10}{在 Whisper 音频编码器中，原始音频采样率 16\,kHz，使用 STFT 提取 Log-Mel 梅尔频谱，帧移 Hop Size $=160$ 个采样点；得到梅尔频谱特征序列后，经过两层步长 Stride$=2$ 的一维卷积降采样，送入 Transformer。若一段音频总长 12 秒，求最终输入 Transformer 的 Token 序列长度 $L$：}{}
+\fourchoicestwo{$1200$}{$600$}{$300$}{$150$}
 
-\qitem{11}{关于视觉语言大模型中的对象幻觉（Object Hallucination），下列成因分析\textbf{最准确}的是}{}
-\fourchoices{幻觉完全由解码温度过高导致，Greedy Search 可彻底消除}{语言先验过强、视觉特征注入不足、训练数据中图文对齐噪声等因素，使模型倾向于生成文本中常见但图像中不存在的对象}{幻觉仅发生在扩散模型中，自回归 VLM 不会产生幻觉}{增大视觉 token 数量一定会加剧幻觉，与语言模型容量无关}
+\qitem{11}{文生图领域存在过多种经典底层生成范式：GAN、VAE、离散自回归 Transformer、扩散 Diffusion 模型。下列关于这些架构的描述，\textbf{错误}的是}{}
+\fourchoices{GAN 类文生图（AttnGAN、StackGAN）依靠生成器与判别器对抗训练，单步直接输出图像，无迭代去噪流程；核心痛点是训练易模式崩溃、高分辨率细节生成能力弱}{VAE 类文生图（早期 DALL$\cdot$E 1）基于潜空间概率建模，通过编码器压缩图像、解码器依据文本重建画面；天然存在生成图像偏模糊、纹理表现力不足的缺陷}{离散自回归 Transformer 文生图（Parti、Muse）将图像映射为 VQ-VAE 离散码本，像文本一样逐 Token 串行预测生成；不依赖扩散前向加噪、反向去噪流程}{主流扩散文生图模型里，SD 1.5/XL 的 U-Net 主干、SD3 与 FLUX 的 MMDiT 主干，采用 AdaLN-Zero 完成文本条件的特征调制}
 
 \qitem{12}{在 CLIP 批内对比学习中，设 batch 大小为 $B$，图像嵌入为 $\{\mathbf{I}_i\}_{i=1}^{B}$，文本嵌入为 $\{\mathbf{T}_i\}_{i=1}^{B}$（均已 L2 归一化），相似度 logits 为 $s_{ij}=\mathbf{I}_i^{\top}\mathbf{T}_j/\tau$。下列说法\textbf{正确}的是}{}
 \fourchoices{温度 $\tau$ 越小，softmax 分布越平滑，负样本梯度越弱}{对角线元素 $s_{ii}$ 为正样本对，非对角线 $s_{ij}\,(i\neq j)$ 在图像到文本方向充当 in-batch 负样本；$\tau$ 越小分布越尖锐，对困难负样本的区分力越强}{对比矩阵只需计算上三角，因为 $s_{ij}=s_{ji}$ 恒成立}{$B=1$ 时 InfoNCE 仍能有效训练，因为预训练数据足够大}
@@ -147,11 +147,7 @@
 
 \qitem{13}{设 ViT 输入图像分辨率为 $H=W=384$，patch 大小 $P=16$，使用 1 个 CLS token。则 patch 数量为 $N_v=$ \blank{2cm}，送入 Transformer 的总序列长度为 \blank{2cm}。}{}
 
-\qitem{14}{CLIP 对称 InfoNCE 损失（图像到文本方向）可写为
-\[
-\mathcal{L}_{I\to T}=-\frac{1}{B}\sum_{i=1}^{B}\log\frac{\exp(\mathbf{I}_i^{\top}\mathbf{T}_i/\tau)}{\sum_{j=1}^{B}\exp(\mathbf{I}_i^{\top}\mathbf{T}_j/\tau)}.
-\]
-完整对称损失为 $\mathcal{L}_{\text{CLIP}}=$ \blank{5.5cm}。}{}
+\qitem{14}{在 DDIM 中，设噪声调度满足 $\alpha_t=1-0.01t$（$t=0,1,\ldots,100$），且取 $\sigma_t=0$。已知第 50 步的状态 $x_{50}$ 和模型预测的噪声 $\epsilon$，则计算 $x_{49}$ 时，$x_{50}$ 前面的系数为 \blank{3cm}。}{}
 
 \qitem{15}{在 CLIP 批内对比学习中，batch 大小为 $B$ 时，对于样本 $i$，图像到文本方向的 in-batch 负样本数量为 \blank{2cm}；图像—文本相似度矩阵规模为 \blank{2.5cm}。}{}
 
@@ -258,9 +254,9 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
   \item B
   \item B
   \item A
-  \item A
-  \item A
-  \item B
+  \item D
+  \item C
+  \item D
   \item B
 \end{enumerate}
 \end{multicols}
@@ -282,11 +278,11 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
 
 \noindent\textbf{8. A}\quad VQ 将连续特征量化为 codebook 索引，argmax 不可微，常用 Straight-Through：前向用离散索引，反向梯度直通编码器输出。B 错误：DALL-E、Parti 等用离散 token + Transformer；C 错误：VQ 损失含 codebook、commitment、重建项；D 错误：码本过大易导致利用率低。
 
-\noindent\textbf{9. A}\quad Zero-shot 分类：构造 $C$ 个 prompt，编码后与图像嵌入算余弦相似度，取最大者对应类别。无需训练分类头，体现 CLIP 的开放词汇能力。
+\noindent\textbf{9. D}\quad FLUX 采用 Rectified Flow / Flow Matching 训练目标，区别于经典 DDPM 噪声预测损失；FLUX 为 Transformer 扩散主干（MMDiT 风格），非 SD 系列 U-Net；FLUX 在文字渲染、手部等细节场景口碑普遍优于 SDXL；FLUX.1 系列参数量与激活显存开销通常\textbf{高于} SDXL，本地推理常见需求为 12GB 及以上显存。
 
-\noindent\textbf{10. A}\quad M-RoPE 对文本用 1D 位置，对视觉 token 用 2D（$h,w$）位置，在 RoPE 旋转中分别处理，使模型感知空间结构。B、C、D 均不符合 Qwen-VL 等设计。
+\noindent\textbf{10. C}\quad 采样率 $16\,\text{kHz}=16000\,\text{Hz}$，帧移 $160$ 采样点，梅尔帧率 $=16000/160=100$ 帧/秒。12 秒音频对应 $12\times 100=1200$ 帧 Mel 特征。经两层 Stride$=2$ 一维卷积，长度依次减半：$1200\to 600\to 300$，故 $L=300$，选 C。A 为未卷积降采样长度；B 为仅一层 Stride$=2$；D 为三层降采样结果。
 
-\noindent\textbf{11. B}\quad 对象幻觉成因：语言先验（"狗"常伴"草地"）过强、视觉注入不足、训练噪声、解码随机性等。A 错误：Greedy 仍可能幻觉；C 错误：VLM 普遍存在；D 错误：适量视觉 token 有助于 grounding，幻觉是多方因素。
+\noindent\textbf{11. D}\quad A、B、C 均为正确描述：GAN 对抗单步生成、易模式崩溃；VAE/早期 DALL$\cdot$E 潜空间重建偏模糊；Parti/Muse 等 VQ 离散 token 自回归、不经扩散去噪。D 错误：\textbf{AdaLN-Zero} 是 DiT（Diffusion Transformer）中的文本/条件调制方式；SD 1.5/XL 的 U-Net 主干主要通过\textbf{交叉注意力（Cross-Attention）}注入文本条件，而非 AdaLN-Zero。SD3 的 MMDiT、FLUX 等虽为 Transformer 扩散主干，其条件注入机制也与「全体主流模型均借助 AdaLN-Zero」的表述不符。
 
 \noindent\textbf{12. B}\quad 对角线 $s_{ii}$ 为正样本；$\tau$ 越小 softmax 越尖锐，对困难负样本梯度越大。A 错误：$\tau$ 小则分布更尖锐；C 错误：图像—文本矩阵一般不对称（$s_{ij}\neq s_{ji}$ 当使用不同编码器时）；D 错误：$B=1$ 无负样本，对比学习失效。
 
@@ -294,7 +290,18 @@ R_\theta\!\begin{pmatrix}a\\b\end{pmatrix}
 
 \noindent\textbf{13.}\quad $N_v=(384/16)^2=24^2=576$\quad ；\quad 总序列长度 $N=576+1=577$。
 
-\noindent\textbf{14.}\quad $\mathcal{L}_{\text{CLIP}}=\dfrac{1}{2}(\mathcal{L}_{I\to T}+\mathcal{L}_{T\to I})$，其中 $\mathcal{L}_{T\to I}$ 为文本到图像方向的 InfoNCE，形式与 $\mathcal{L}_{I\to T}$ 对称。
+\noindent\textbf{14.}\quad $\sqrt{\dfrac{\alpha_{49}}{\alpha_{50}}}=\sqrt{\dfrac{0.51}{0.5}}=\sqrt{\dfrac{51}{50}}\approx 1.01$。
+
+\textbf{推导：}DDIM 在 $\sigma_t=0$（确定性采样）时，
+\[
+x_{t-1}=\sqrt{\alpha_{t-1}}\,\hat x_0+\sqrt{1-\alpha_{t-1}}\,\epsilon,\qquad
+\hat x_0=\frac{x_t-\sqrt{1-\alpha_t}\,\epsilon}{\sqrt{\alpha_t}}.
+\]
+代入并整理 $x_t$ 的系数：
+\[
+x_{t-1}=\sqrt{\frac{\alpha_{t-1}}{\alpha_t}}\,x_t+\left(\sqrt{1-\alpha_{t-1}}-\sqrt{\frac{\alpha_{t-1}(1-\alpha_t)}{\alpha_t}}\right)\epsilon.
+\]
+故 $x_{50}$ 的系数为 $\sqrt{\alpha_{49}/\alpha_{50}}$。由 $\alpha_t=1-0.01t$ 得 $\alpha_{50}=0.5$，$\alpha_{49}=0.51$，系数 $=\sqrt{0.51/0.5}=\sqrt{51/50}$。
 
 \noindent\textbf{15.}\quad 负样本数 $=B-1$\quad ；\quad 相似度矩阵规模 $=B\times B$。
 
