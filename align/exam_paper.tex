@@ -1,0 +1,400 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{tasks}
+\usepackage{array,tabularx}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{needspace}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 大模型微调与 RLHF 对齐 期末试卷}
+\fancyhead[R]{\small 第 \thepage\ 页}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% 工具命令
+\newcommand{\blank}[1]{\underline{\hspace{#1}}}
+\newcommand{\fn}[2]{\dfrac{#1}{#2}}
+
+% 大题标题
+\newcommand{\examsection}[2]{%
+  \vspace{0.6cm}
+  \noindent{\CJKfamily{SimHei}\bfseries\large #1\quad (#2)}\par
+  \vspace{0.3cm}
+}
+
+% 题号 + 题干
+\newcommand{\qitem}[2]{%
+  \noindent\textbf{#1.}\;#2\par
+  \vspace{0.3em}
+}
+
+% 选择题选项
+\newcommand{\fourchoices}[4]{%
+  \begin{enumerate}[label=(\Alph*),leftmargin=2.2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+    \setlength{\itemindent}{0pt}
+    \item #1
+    \item #2
+    \item #3
+    \item #4
+  \end{enumerate}
+  \vspace{0.4em}
+}
+
+\newcommand{\fourchoicestwo}[4]{%
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(A)}#1\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(B)}#2\end{minipage}\par
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(C)}#3\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(D)}#4\end{minipage}\par
+  \vspace{0.4em}
+}
+
+\newcommand{\fouranswerrow}[8]{%
+  \noindent
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#1.}}#2\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#3.}}#4\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#5.}}#6\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#7.}}#8\end{minipage}\par
+  \vspace{0.15em}
+}
+
+\newcommand{\answerlines}[1]{%
+  \vspace{0.2cm}
+  \foreach \i in {1,...,#1} {
+    \noindent{\color{white}\rule{\linewidth}{0.4pt}}\par\vspace{0.5cm}
+  }
+}
+
+\begin{document}
+
+% ============ 试卷标题与说明 ============
+\begin{center}
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型微调与 RLHF 对齐 期末试卷}\\[0.3cm]
+{\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}\\[0.2cm]
+{\small 命题范围：参数高效微调 / 监督微调 SFT / 奖励建模 / RLHF-PPO / DPO 与偏好优化 / 对齐安全与评估}
+\end{center}
+
+\vspace{1.5cm}
+\noindent\rule{\linewidth}{1pt}
+
+\vspace{0.2cm}
+\noindent{\CJKfamily{SimHei}\bfseries 注意事项：}
+\begin{enumerate}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
+  \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
+  \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
+  \item 本试卷中如无特殊说明，基座模型参数量记为 $\Phi$，隐藏维度记为 $d$，LoRA 秩记为 $r$，序列长度记为 $L$，批大小记为 $B$，词表大小记为 $V$，参考模型记为 $\pi_{\mathrm{ref}}$，策略模型记为 $\pi_\theta$，奖励模型输出记为 $r_\phi(x,y)$。
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+% ============ 一、选择题 ============
+\examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
+
+\qitem{1}{关于 LoRA（Low-Rank Adaptation）的核心思想，下列说法\textbf{正确}的是}{}
+\fourchoices{LoRA 通过全量更新权重矩阵 $W\in\mathbb{R}^{d_{\mathrm{out}}\times d_{\mathrm{in}}}$ 来适配下游任务}{LoRA 冻结预训练权重 $W$，仅训练低秩增量 $\Delta W=BA$，其中 $B\in\mathbb{R}^{d_{\mathrm{out}}\times r}$，$A\in\mathbb{R}^{r\times d_{\mathrm{in}}}$，且通常 $r\ll\min(d_{\mathrm{in}},d_{\mathrm{out}})$}{LoRA 只能应用于 Transformer 的 MLP 层，不能用于注意力投影层}{LoRA 训练完成后必须将 $BA$ 永久合并进 $W$，否则无法推理}
+
+\qitem{2}{在指令微调（Instruction Tuning / SFT）中，对形如「用户指令 + 模型回复」的样本，标准做法是对 Loss 施加\textbf{因果掩码}并}{}
+\fourchoices{对指令部分与回复部分均计算 next-token 预测损失}{仅对回复部分计算 next-token 预测损失，指令部分 token 不参与 Loss 计算}{仅对指令部分计算 Loss，以强化模型对指令的理解}{对指令与回复分别计算两个独立的交叉熵损失再相加}
+
+\qitem{3}{经典 RLHF 对齐流水线（InstructGPT / ChatGPT 风格）的三个阶段，其\textbf{正确顺序}是}{}
+\fourchoices{SFT $\to$ PPO 强化学习 $\to$ 奖励模型训练}{奖励模型训练 $\to$ SFT $\to$ PPO 强化学习}{SFT $\to$ 奖励模型训练 $\to$ PPO 强化学习}{PPO 强化学习 $\to$ SFT $\to$ 奖励模型训练}
+
+\qitem{4}{QLoRA 在单卡上微调 65B 级模型的关键设计\textbf{不包括}}{}
+\fourchoices{对冻结的基座权重做 4-bit NormalFloat（NF4）量化}{使用双重量化（Double Quantization）进一步压缩量化常数}{在 GPU 上通过分页优化器（Paged Optimizer）管理优化器状态}{将 LoRA 适配器也量化为 INT4 且不再保留 FP16 梯度}
+
+\qitem{5}{下列 PEFT（Parameter-Efficient Fine-Tuning）方法中，\textbf{推理阶段不引入额外延迟}（即无需额外前向模块）的是}{}
+\fourchoices{Prefix Tuning（在输入前拼接可学习前缀向量）}{Adapter（在 FFN 中插入瓶颈层）}{LoRA（训练后将 $BA$ 合并进 $W$）}{Prompt Tuning（仅在输入嵌入层添加 soft prompt）}
+
+\qitem{6}{奖励模型（Reward Model, RM）通常基于 Bradley-Terry 偏好模型训练。给定提示 $x$，偏好回答 $y_w$ 优于 $y_l$，模型输出标量奖励 $r_\phi(x,y)$，则标准 RM 损失为}{}
+\fourchoices{$-\log\sigma\!\big(r_\phi(x,y_w)-r_\phi(x,y_l)\big)$}{$-\log\sigma\!\big(r_\phi(x,y_l)-r_\phi(x,y_w)\big)$}{$\|r_\phi(x,y_w)-1\|^2+\|r_\phi(x,y_l)+1\|^2$}{$-\log\pi_\phi(y_w|x)-\log\big(1-\pi_\phi(y_l|x)\big)$}
+
+\qitem{7}{在 RLHF 的 PPO 阶段，设旧策略 $\pi_{\mathrm{old}}$，当前策略 $\pi_\theta$，优势函数 $A_t$，裁剪阈值 $\epsilon=0.2$。则 PPO-Clip 目标中，单样本贡献为 $\min\!\big(r_t(\theta)A_t,\;\mathrm{clip}(r_t(\theta),1-\epsilon,1+\epsilon)A_t\big)$，其中 $r_t(\theta)$ 定义为}{}
+\fourchoices{$\dfrac{\pi_{\mathrm{old}}(a_t|s_t)}{\pi_\theta(a_t|s_t)}$}{$\dfrac{\pi_\theta(a_t|s_t)}{\pi_{\mathrm{old}}(a_t|s_t)}$}{$\dfrac{\pi_\theta(a_t|s_t)}{\pi_{\mathrm{ref}}(a_t|s_t)}$}{$\exp\!\big(\pi_\theta(a_t|s_t)-\pi_{\mathrm{old}}(a_t|s_t)\big)$}
+
+\qitem{8}{DPO（Direct Preference Optimization）相对传统 RLHF-PPO 的主要优势是}{}
+\fourchoices{完全不需要偏好数据，仅依赖无标注文本}{无需单独训练奖励模型与 PPO 循环，直接在偏好对上优化策略，且隐式包含 KL 约束}{保证微调后模型在预训练 perplexity 上一定优于基座模型}{训练过程中不需要保存参考模型 $\pi_{\mathrm{ref}}$}
+
+\qitem{9}{关于全量微调（Full Fine-Tuning）与 LoRA 的对比，下列说法\textbf{错误}的是}{}
+\fourchoices{全量微调在下游数据量较小时更容易出现灾难性遗忘（Catastrophic Forgetting）}{LoRA 的 $A$ 矩阵通常采用高斯初始化，$B$ 矩阵初始化为零，使训练初期 $\Delta W=BA\approx 0$}{LoRA 的秩 $r$ 越大，可训练参数量与表达能力通常越强，但收益存在边际递减}{LoRA 微调后模型在相同数据上的收敛速度一定快于全量微调，因为参数量更少}
+
+\qitem{10}{SimPO（Simple Preference Optimization）相对 DPO 的一个关键改进是}{}
+\fourchoices{引入额外的价值网络（Value Network）估计优势函数}{用序列平均 log-probability 的差值作为隐式奖励，并去掉对参考模型 $\pi_{\mathrm{ref}}$ 的依赖}{将 PPO 的裁剪机制直接嵌入 SFT 损失}{仅支持多轮对话数据，不支持单轮偏好对}
+
+\qitem{11}{RLHF 中常见的「奖励黑客（Reward Hacking）」现象，其\textbf{最本质}的成因是}{}
+\fourchoices{奖励模型训练数据量不足}{奖励模型仅是 $r_\phi(x,y)$ 的标量近似，策略优化会在 $\pi_\theta$ 支撑集上最大化该代理目标，从而偏离真实人类偏好}{PPO 裁剪阈值 $\epsilon$ 设置过大}{SFT 阶段学习率过高}
+
+\qitem{12}{KTO（Kahneman-Tversky Optimization）相对 DPO 的数据与目标假设，下列说法\textbf{正确}的是}{}
+\fourchoices{KTO 必须使用成对偏好数据 $(y_w,y_l)$，与 DPO 完全相同}{KTO 基于前景理论，可仅利用带标签的单回复数据（good/bad），无需严格成对采样}{KTO 仅适用于多模态对齐，不适用于纯文本 LLM}{KTO 在数学上等价于 PPO-Clip，只是实现更高效}
+
+% ============ 二、填空题 ============
+\examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
+
+\qitem{13}{LoRA 前向传播为 $h = Wx + \dfrac{\alpha}{r}BAx$。若秩 $r=8$，缩放因子 $\alpha=16$，则 LoRA 分支的有效缩放系数为 \blank{2cm}。}{}
+
+\qitem{14}{对某线性层 $W\in\mathbb{R}^{4096\times 4096}$ 施加 LoRA（$r=16$），该层 LoRA 可训练参数量为 \blank{3cm}（用整数表示）。}{}
+
+\qitem{15}{在 RLHF-PPO 中，优势函数 $A_t$ 常用 GAE（Generalized Advantage Estimation）估计：$A_t=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}$，其中 TD 残差 $\delta_t=$ \blank{5cm}。}{}
+
+\qitem{16}{DPO 损失中，$\beta$ 控制策略偏离参考模型的强度。当 $\beta\to+\infty$ 时，最优策略将 \blank{4cm}；当 $\beta\to 0$ 时，模型主要 \blank{4cm}。}{}
+
+\qitem{17}{SFT 微调使用全局批大小 $128$，$8$ 张 GPU 数据并行，每卡微批大小为 $2$，则梯度累积步数为 \blank{2cm}。}{}
+
+\qitem{18}{设词表大小 $V=2$，某 prompt $x$ 下，参考模型 $\pi_{\mathrm{ref}}(A|x)=\pi_{\mathrm{ref}}(B|x)=0.5$；SFT 后策略 $\pi_\theta(A|x)=0.9$，$\pi_\theta(B|x)=0.1$。则 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})\approx$ \blank{2.5cm}（取 $\ln 9\approx 2.20$，$\ln 0.111\approx -2.20$，保留两位小数）。}{}
+
+% ============ 三、解答题 ============
+\examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
+
+\qitem{19}{（本小题满分 10 分）}{}
+\noindent LoRA 将权重更新限制为低秩形式。设原线性层 $y = Wx$，$W\in\mathbb{R}^{d_{\mathrm{out}}\times d_{\mathrm{in}}}$，LoRA 引入 $\Delta W = BA$，$B\in\mathbb{R}^{d_{\mathrm{out}}\times r}$，$A\in\mathbb{R}^{r\times d_{\mathrm{in}}}$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出 LoRA 修改后的前向公式，并说明为何初始化 $A\sim\mathcal{N}(0,\sigma^2)$、$B=0$ 能使训练初始阶段输出与预训练模型一致；（3 分）
+  \item 推导该层 LoRA 可训练参数量，并与全量微调该层的参数量对比，给出压缩比（用 $d_{\mathrm{in}},d_{\mathrm{out}},r$ 表示）；（4 分）
+  \item 说明 LoRA 通常作用于 $W_Q,W_K,W_V,W_O$ 而非 MLP 的全部矩阵时，工程上如何权衡效果与显存。（3 分）
+\end{enumerate}
+
+\answerlines{8}
+
+\needspace{6cm}
+\qitem{20}{（本小题满分 10 分）}{}
+\noindent 指令微调样本格式为：\texttt{<|user|> 问题 <|assistant|> 回答}。设 token 序列长度为 $L$，其中前 $L_u$ 个 token 属于用户指令（含模板 token），后 $L_a=L-L_u$ 个 token 属于助手回复。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出带掩码的 SFT 损失函数 $\mathcal{L}_{\mathrm{SFT}}$（对回复部分每个 token 做 next-token 预测）；（3 分）
+  \item 解释为何不能对指令部分也计算 Loss（从「教模型生成回答」vs「教模型复述指令」两个角度）；（3 分）
+  \item 若采用 packing（将多条短样本拼接为一个长序列），需要额外引入哪些机制防止样本间互相可见？（4 分）
+\end{enumerate}
+
+\answerlines{8}
+
+\needspace{6cm}
+\qitem{21}{（本小题满分 10 分）}{}
+\noindent 奖励模型 $r_\phi(x,y)$ 在偏好数据集 $\mathcal{D}=\{(x^{(i)},y_w^{(i)},y_l^{(i)})\}$ 上训练，Bradley-Terry 模型假设 $P(y_w\succ y_l|x)=\sigma(r_\phi(x,y_w)-r_\phi(x,y_l))$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出负对数似然损失 $\mathcal{L}_{\mathrm{RM}}(\phi)$ 并解释每一项的直觉含义；（4 分）
+  \item 说明 RM 训练完成后，在 PPO 阶段如何使用 $r_\phi$ 构造逐步奖励（token-level reward）；（3 分）
+  \item 列举 RM 常见的两个失效模式（如长度偏置、风格偏置），并各给一条缓解策略。（3 分）
+\end{enumerate}
+
+\answerlines{8}
+
+\needspace{6cm}
+\qitem{22}{（本小题满分 10 分）}{}
+\noindent RLHF 中 PPO 阶段优化目标（忽略价值函数与熵 bonus）为：
+\[
+\max_\theta\;\mathbb{E}_{x\sim\mathcal{D},\,y\sim\pi_\theta(\cdot|x)}\!\left[r_\phi(x,y)-\beta\log\frac{\pi_\theta(y|x)}{\pi_{\mathrm{ref}}(y|x)}\right].
+\]
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 解释 KL 惩罚项 $-\beta\log\frac{\pi_\theta}{\pi_{\mathrm{ref}}}$ 的作用，以及 $\beta$ 过大/过小分别会导致什么现象；（4 分）
+  \item 将上式改写为 PPO-Clip 可优化的形式：定义 $r_t(\theta)=\frac{\pi_\theta(y_t|x,y_{<t})}{\pi_{\mathrm{old}}(y_t|x,y_{<t})}$，写出 Clip 目标并说明为何需要「裁剪」；（4 分）
+  \item 说明参考模型 $\pi_{\mathrm{ref}}$ 与 PPO 中旧策略 $\pi_{\mathrm{old}}$ 的区别与联系。（2 分）
+\end{enumerate}
+
+\answerlines{10}
+
+\needspace{6cm}
+\qitem{23}{（本小题满分 10 分）}{}
+\noindent DPO 将 RLHF 的约束优化问题
+\[
+\max_\pi\;\mathbb{E}[r(x,y)]-\beta D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})
+\]
+转化为在偏好数据上的分类损失。设人类偏好 $y_w\succ y_l$ 满足 $P(y_w\succ y_l|x)=\sigma(r(x,y_w)-r(x,y_l))$。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出最优策略 $\pi^*(y|x)$ 的闭式解（含配分函数 $Z(x)$）；（3 分）
+  \item 利用 $\log\frac{\pi^*(y|x)}{\pi_{\mathrm{ref}}(y|x)}=\frac{r(x,y)}{\beta}-\log Z(x)$，消去 $r(x,y)$，推导 DPO 损失；（5 分）
+  \item 对比 DPO 与 RLHF-PPO 在工程实现上的三个主要差异。（2 分）
+\end{enumerate}
+
+\answerlines{12}
+
+\needspace{6cm}
+\qitem{24}{（本小题满分 10 分，压轴）}{}
+\noindent 某团队需将 7B 基座模型对齐为「有帮助、无害、诚实」的对话助手。资源：单台 8$\times$A100-80GB 节点；数据：10k 高质量指令 SFT 样本、50k 成对偏好数据、5k 安全拒绝样本（有害请求 + 安全回复）。基座模型 fp16 权重约 14GB。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 设计完整对齐流水线（阶段顺序、每阶段目标与数据），并说明为何该顺序合理；（4 分）
+  \item 在 QLoRA（$r=64$，4-bit 基座 + bf16 LoRA）与全量 SFT 之间做出选择并量化估算 7B 模型在 8 卡上的可训练性与显存占用（需写出主要显存项）；（3 分）
+  \item 针对「过度拒绝（Over-refusal）」与「越狱（Jailbreak）」两类对齐失败，各提出一条可落地的数据或算法缓解方案，并说明预期副作用。（3 分）
+\end{enumerate}
+
+\answerlines{14}
+
+% ============ 答案另起一页 ============
+\newpage
+\begin{center}
+{\zihao{2}\heiti 参考答案与解析}\\[0.3cm]
+{\small 命题：大模型微调与 RLHF 对齐课程组 \quad 校对：教研组}
+\end{center}
+\vspace{0.3cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+\subsection*{\heiti 一、选择题答案}
+
+\fouranswerrow{1}{B}{2}{B}{3}{C}{4}{D}
+\fouranswerrow{5}{C}{6}{A}{7}{B}{8}{B}
+\fouranswerrow{9}{D}{10}{B}{11}{B}{12}{B}
+
+\vspace{0.3cm}
+
+\noindent\textbf{1. B}\quad LoRA 冻结 $W$，只训练低秩 $BA$，$r\ll d$ 时参数量远小于全量微调。A 描述全量微调；C 错误：LoRA 广泛用于 $W_Q,W_K,W_V,W_O$ 及 MLP；D 错误：推理时可动态计算 $BAx$ 或合并后推理。
+
+\noindent\textbf{2. B}\quad 标准 Instruction SFT 只对助手回复部分计算 next-token CE Loss，避免模型学习「复述用户指令」。A/C/D 均不符合主流做法（Alpaca、LLaMA-Factory 等）。
+
+\noindent\textbf{3. C}\quad 经典 RLHF：先用 SFT 教会基本指令跟随，再训 RM 学偏好，最后用 PPO 在 RM 信号下优化策略。
+
+\noindent\textbf{4. D}\quad QLoRA 量化冻结基座权重（NF4），LoRA 适配器通常保持 bf16/fp16 可训练精度；D 错误地把 LoRA 也 INT4 化且不含 FP16 梯度，不符合 QLoRA 原论文设计。
+
+\noindent\textbf{5. C}\quad LoRA 训练结束后可将 $BA$ 合并进 $W$，推理无额外模块。Prefix/Prompt Tuning 需拼接额外 token；Adapter 需额外前向层。
+
+\noindent\textbf{6. A}\quad Bradley-Terry 偏好概率 $P(y_w\succ y_l|x)=\sigma(r_w-r_l)$，负对数似然即 $-\log\sigma(r_\phi(x,y_w)-r_\phi(x,y_l))$。
+
+\noindent\textbf{7. B}\quad PPO 重要性采样比 $r_t(\theta)=\pi_\theta(a_t|s_t)/\pi_{\mathrm{old}}(a_t|s_t)$。C 是 KL 惩罚中的参考策略比，非 PPO ratio。
+
+\noindent\textbf{8. B}\quad DPO 直接在偏好对上优化，隐式 KL 约束，无需 RM + PPO 循环。A 错误：DPO 需要偏好数据；C 无保证；D 错误：DPO 需要 $\pi_{\mathrm{ref}}$ 计算 log-ratio。
+
+\noindent\textbf{9. D}\quad LoRA 参数量少但每步更新维度低，收敛速度\textbf{不一定}更快；小数据全量微调更易遗忘预训练能力。A、B、C 均为正确描述。
+
+\noindent\textbf{10. B}\quad SimPO 用 $\frac{\beta}{|y|}\log\pi_\theta(y|x)$ 的差分作隐式奖励，去掉参考模型。A 描述 PPO；C 混淆；D 错误。
+
+\noindent\textbf{11. B}\quad RM 是代理目标，策略优化会 exploit RM 漏洞（如堆砌正面词、过长回答），本质上是「优化错误目标」。
+
+\noindent\textbf{12. B}\quad KTO 基于前景理论，支持非成对的 good/bad 单回复标签，是 DPO 的重要扩展。
+
+\subsection*{\heiti 二、填空题答案}
+
+\noindent\textbf{13.}\quad $2$\quad 有效缩放 $=\alpha/r=16/8=2$。
+
+\noindent\textbf{14.}\quad $131072$\quad LoRA 参数 $=r(d_{\mathrm{in}}+d_{\mathrm{out}})=16\times(4096+4096)=131072$。
+
+\noindent\textbf{15.}\quad $r_t+\gamma V(s_{t+1})-V(s_t)$\quad 其中 $r_t$ 为即时奖励；GAE 通过 $\lambda$ 在偏差与方差间折中。
+
+\noindent\textbf{16.}\quad 退化为参考模型 $\pi_{\mathrm{ref}}$（或「几乎不改变参考策略」）\quad ；\quad 完全最大化奖励而忽略 KL 约束（或「严重偏离参考模型」）。
+
+\noindent\textbf{17.}\quad $8$\quad $128=8\times2\times\text{Steps}\Rightarrow\text{Steps}=8$。
+
+\noindent\textbf{18.}\quad $0.61$\quad $D_{\mathrm{KL}}=0.9\ln(0.9/0.5)+0.1\ln(0.1/0.5)=0.9\ln 1.8+0.1\ln 0.2\approx0.475-0.161=0.61$。
+
+\subsection*{\heiti 三、解答题答案}
+
+\subsubsection*{19. LoRA 原理（10 分）}
+
+\noindent\textbf{(1) 前向与初始化（3 分）}
+
+修改后：$y = Wx + \frac{\alpha}{r}BAx$。$B=0$ 时 $BA=0$，故 $\Delta y=0$，输出等于原 $Wx$，训练从预训练权重「零扰动」起步，保证初始 loss 与基座一致，优化更稳定。
+
+\noindent\textbf{(2) 参数量与压缩比（4 分）}
+
+LoRA 可训练参数 $=r(d_{\mathrm{in}}+d_{\mathrm{out}})$；全量微调 $=d_{\mathrm{in}}d_{\mathrm{out}}$。压缩比
+\[
+\frac{d_{\mathrm{in}}d_{\mathrm{out}}}{r(d_{\mathrm{in}}+d_{\mathrm{out}})}.
+\]
+例：$4096\times4096$ 层，$r=16$，压缩比 $\approx 4096/32=128$ 倍。
+
+\noindent\textbf{(3) 工程权衡（3 分）}
+
+$W_Q,W_V$ 通常收益最高；加 $W_K,W_O$ 进一步提升但参数翻倍。MLP 层（$d\times4d$）参数更多，对显存敏感场景可只对 Attention 做 LoRA；若效果不足再扩至 MLP 或增大 $r$。
+
+\subsubsection*{20. 指令微调 SFT（10 分）}
+
+\noindent\textbf{(1) 带掩码损失（3 分）}
+
+\[
+\mathcal{L}_{\mathrm{SFT}}=-\sum_{t=L_u+1}^{L}\log p_\theta(y_t\mid x,y_{<t}),
+\]
+等价于对 $t\le L_u$ 的 token 令 loss mask 为 0。
+
+\noindent\textbf{(2) 为何不 mask 指令（3 分）}
+
+若对指令也算 Loss，模型被训练成「续写/复述用户输入」，而非「生成助手回复」；推理时用户输入已给定，对指令算 loss 浪费容量且可能导致错误行为（如重复用户问题）。
+
+\noindent\textbf{(3) Packing 机制（4 分）}
+
+需引入 \textbf{segment ID / attention mask}，使同一样本内 token 可互相 attend，不同样本间不可见（Block-Diagonal Mask）；通常还需 \textbf{position ID 重置}，避免跨样本位置编码串联；FlashAttention 变体需支持 variable-length / cu-seqlen 接口。
+
+\subsubsection*{21. 奖励模型（10 分）}
+
+\noindent\textbf{(1) RM 损失（4 分）}
+
+\[
+\mathcal{L}_{\mathrm{RM}}(\phi)=-\mathbb{E}_{(x,y_w,y_l)\sim\mathcal{D}}\!\left[\log\sigma\!\big(r_\phi(x,y_w)-r_\phi(x,y_l)\big)\right].
+\]
+最大化偏好对的对数几率：$r_w-r_l$ 越大，$y_w$ 优于 $y_l$ 的概率越高。
+
+\noindent\textbf{(2) Token-level 奖励（3 分）}
+
+常见做法：仅在\textbf{最后一个 token} 处给予 $r_\phi(x,y)$，其余 token 奖励为 0；或用 KL 惩罚构造逐步 reward：$r_t=\mathrm{RM\_end}(x,y)\cdot\mathbf{1}_{t=T}-\beta\log\frac{\pi_\theta(y_t|y_{<t},x)}{\pi_{\mathrm{ref}}(y_t|y_{<t},x)}$。
+
+\noindent\textbf{(3) 失效模式与缓解（3 分）}
+
+\textbf{长度偏置}：RM 偏好更长回答 $\Rightarrow$ 训练时对长度做归一化或惩罚超长样本。\textbf{风格偏置}：RM 偏好列表/敬语 $\Rightarrow$ 增加多样化偏好数据、对抗性数据增强。
+
+\subsubsection*{22. PPO 与 KL 惩罚（10 分）}
+
+\noindent\textbf{(1) KL 惩罚作用（4 分）}
+
+限制 $\pi_\theta$ 不偏离 $\pi_{\mathrm{ref}}$ 太远，保持流畅性与多样性，防止 reward hacking。$\beta$ 过大：策略几乎不动，对齐效果弱；$\beta$ 过小：策略偏离过大，输出退化/重复/乱码。
+
+\noindent\textbf{(2) PPO-Clip 形式（4 分）}
+
+\[
+\mathcal{L}^{\mathrm{CLIP}}=\mathbb{E}\!\left[\min\!\left(r_t(\theta)A_t,\;\mathrm{clip}(r_t(\theta),1-\epsilon,1+\epsilon)A_t\right)\right].
+\]
+裁剪防止 $r_t$ 偏离 1 太远时梯度爆炸，保证多轮 on-policy 更新稳定。
+
+\noindent\textbf{(3) $\pi_{\mathrm{ref}}$ vs $\pi_{\mathrm{old}}$（2 分）}
+
+$\pi_{\mathrm{ref}}$ 固定为 SFT 模型，提供 KL 锚点；$\pi_{\mathrm{old}}$ 每轮 PPO 更新前复制自当前 $\pi_\theta$，用于重要性采样。前者约束长期偏离，后者约束单次更新步长。
+
+\subsubsection*{23. DPO 推导（10 分）}
+
+\noindent\textbf{(1) 闭式最优解（3 分）}
+
+\[
+\pi^*(y|x)=\frac{1}{Z(x)}\pi_{\mathrm{ref}}(y|x)\exp\!\left(\frac{r(x,y)}{\beta}\right),\quad Z(x)=\sum_y\pi_{\mathrm{ref}}(y|x)\exp\!\left(\frac{r(x,y)}{\beta}\right).
+\]
+
+\noindent\textbf{(2) DPO 损失推导（5 分）}
+
+由 $\log\frac{\pi^*(y|x)}{\pi_{\mathrm{ref}}(y|x)}=\frac{r(x,y)}{\beta}-\log Z(x)$，得
+$r(x,y)=\beta\log\frac{\pi^*(y|x)}{\pi_{\mathrm{ref}}(y|x)}+\beta\log Z(x)$。
+代入 Bradley-Terry：
+\[
+P(y_w\succ y_l|x)=\sigma\!\left(\beta\log\frac{\pi^*(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\frac{\pi^*(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right).
+\]
+用 $\pi_\theta$ 替换 $\pi^*$，极大似然得
+\[
+\mathcal{L}_{\mathrm{DPO}}=-\mathbb{E}\!\left[\log\sigma\!\left(\beta\log\frac{\pi_\theta(y_w|x)}{\pi_{\mathrm{ref}}(y_w|x)}-\beta\log\frac{\pi_\theta(y_l|x)}{\pi_{\mathrm{ref}}(y_l|x)}\right)\right].
+\]
+$Z(x)$ 在作差时消去。
+
+\noindent\textbf{(3) 工程差异（2 分）}
+
+DPO：无 RM、无 PPO 采样循环、实现简单；但需存 $\pi_{\mathrm{ref}}$ 做 log-ratio，离线更新。PPO：需 RM + 在线 rollout + value head，显存与系统复杂度高，但更灵活（可接规则奖励）。
+
+\subsubsection*{24. 对齐流水线综合设计（10 分）}
+
+\noindent\textbf{(1) 流水线设计（4 分）}
+
+推荐：\textbf{SFT}（10k 指令，学会格式与基本能力）$\to$ \textbf{RM 或直接 DPO}（50k 偏好，学人类偏好）$\to$ \textbf{安全 SFT / 拒绝微调}（5k 安全样本，强化无害性）$\to$（可选）\textbf{轻量 DPO/KTO 迭代}。
+
+顺序理由：SFT 先提供可优化起点；偏好对齐在已有指令能力上修正；安全微调放后避免损害通用能力，且可覆盖越狱模式。
+
+\noindent\textbf{(2) QLoRA vs 全量（3 分）}
+
+8$\times$80GB 可全量 SFT 7B（权重 14GB + 优化器 $\approx$100GB+ 分布式可承受），但 DPO/RM 需同时加载 ref 模型，显存紧张。\textbf{推荐 QLoRA}：4-bit 基座 $\approx$3.5GB/卡 + LoRA 梯度/优化器 $\ll$ 全量，8 卡 DP 可轻松跑 $r=64$；主要显存项：量化权重 + LoRA 参数 + 激活（与 $L,B$ 相关）+ 优化器（仅 LoRA 部分）。
+
+\noindent\textbf{(3) 失败模式缓解（3 分）}
+
+\textbf{过度拒绝}：加入「应正常回答」的 hard positive 样本做 SFT/DPO 平衡；副作用：可能降低安全阈值。\textbf{越狱}：加入对抗性 red-team 样本 + 安全 RM 约束或 Constitutional AI 自批判机制；副作用：训练成本上升，可能增加过度拒绝。
+
+\end{document}
