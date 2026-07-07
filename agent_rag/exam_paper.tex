@@ -147,11 +147,13 @@
 
 \qitem{15}{朴素 RAG 中，若 LLM 上下文上限 $L_{\max}=8192$ tokens，系统 Prompt 与问题共占 500 tokens，每个检索 Chunk 平均 400 tokens，为生成预留 500 tokens，则最多可拼接 \blank{2cm} 个 Chunk。}{}
 
-\qitem{16}{BM25 打分公式中，逆文档频率项 $\mathrm{IDF}(q_i)=\ln\!\left(\dfrac{N-n(q_i)+0.5}{n(q_i)+0.5}+1\right)$，其中 $n(q_i)$ 为包含词 $q_i$ 的文档数。若语料 $N=1000$，某查询词出现在 $n(q_i)=10$ 篇文档中，则 $\mathrm{IDF}(q_i)\approx$ \blank{2.5cm}（取 $\ln 100\approx 4.61$，保留两位小数）。}{}
+\qitem{16}{BM25 打分公式中，逆文档频率项 $\mathrm{IDF}(q_i)=\ln\!\left(\dfrac{N-n(q_i)+0.5}{n(q_i)+0.5}+1\right)$，其中 $n(q_i)$ 为包含词 $q_i$ 的文档数。若语料 $N=1000$，某查询词出现在 $n(q_i)=10$ 篇文档中，则 $\mathrm{IDF}(q_i)=$ \blank{3cm}（用 $\ln$ 式表示）。}{}
 
 \qitem{17}{ReAct Agent 设最大步数 $T_{\max}=8$，每步包含 1 次 LLM 调用与 1 次工具调用。若 LLM 平均延迟 2s，工具平均延迟 0.5s，则该 Agent 单次任务最坏情况下的端到端延迟约为 \blank{2.5cm} 秒。}{}
 
-\qitem{18}{混合检索中，Reciprocal Rank Fusion（RRF）将稠密检索排名 $r_d$ 与稀疏检索排名 $r_s$ 融合，标准公式为 $\mathrm{RRF}(d)=\dfrac{1}{k+r_d}+\dfrac{1}{k+r_s}$，常取 $k=60$。若某文档在稠密检索中排名第 1、稀疏检索中排名第 4，则其 RRF 得分为 \blank{3cm}（保留四位小数）。}{}
+\qitem{18}{混合检索中，Reciprocal Rank Fusion（RRF）将稠密检索排名 $r_d$ 与稀疏检索排名 $r_s$ 融合，标准公式为 $\mathrm{RRF}(d)=\dfrac{1}{k+r_d}+\dfrac{1}{k+r_s}$。若取 $k=10$，某文档在稠密检索中排名第 $1$、稀疏检索中排名第 $2$，则其 RRF 得分为 \blank{3cm}（保留分数形式或两位小数）。}{}
+
+\answerlines{6}
 
 % ============ 三、解答题 ============
 \examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
@@ -174,7 +176,7 @@
   \item 对比 ReAct 与「先规划后执行」（Plan-and-Execute）两种范式：各自优势、适用场景与主要失败模式各举一点。（5 分）
 \end{enumerate}
 
-\answerlines{12}
+\answerlines{16}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
@@ -281,11 +283,11 @@ C & 9.1 & 0.61 & 3 \\
 
 \noindent\textbf{15.}\quad $16$\quad 可用于 Chunk 的 token 预算 $=8192-500-500=7192$，$7192/400=17.98$，最多 17 个；若「系统 Prompt 与问题共 500」已含预留则按 $8192-500-500=7192$ 得 17。按题意三处独立占用：$8192-500-400k-500\ge0\Rightarrow k\le16.755$，取 $\boxed{16}$。
 
-\noindent\textbf{16.}\quad $4.61$\quad $\mathrm{IDF}=\ln\!\left(\dfrac{1000-10+0.5}{10+0.5}+1\right)=\ln\!\left(\dfrac{990.5}{10.5}+1\right)=\ln(95.29)\approx4.61$。
+\noindent\textbf{16.}\quad $\ln\!\left(\dfrac{990.5}{10.5}+1\right)$（或等价地 $\ln\!\left(\dfrac{2002}{21}\right)$）\quad 代入 $N=1000$，$n(q_i)=10$：$\mathrm{IDF}=\ln\!\left(\dfrac{1000-10+0.5}{10+0.5}+1\right)=\ln\!\left(\dfrac{990.5}{10.5}+1\right)$。
 
 \noindent\textbf{17.}\quad $20$\quad 每步 $2+0.5=2.5$s，8 步共 $8\times2.5=20$s。
 
-\noindent\textbf{18.}\quad $0.0320$\quad $\mathrm{RRF}=\dfrac{1}{60+1}+\dfrac{1}{60+4}=\dfrac{1}{61}+\dfrac{1}{64}\approx0.01639+0.01563=0.0320$。
+\noindent\textbf{18.}\quad $\dfrac{23}{132}$（或 $\approx 0.17$）\quad $\mathrm{RRF}=\dfrac{1}{10+1}+\dfrac{1}{10+2}=\dfrac{1}{11}+\dfrac{1}{12}=\dfrac{12+11}{132}=\dfrac{23}{132}$。
 
 \subsection*{\heiti 三、解答题答案}
 
