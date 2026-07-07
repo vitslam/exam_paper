@@ -14,7 +14,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small 大模型 Agent 与 RAG 期末试卷}
+\fancyhead[L]{\small 大模型应用开发期末试卷}
 \fancyhead[R]{\small 第 \thepage\ 页}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -80,7 +80,7 @@
 
 % ============ 试卷标题与说明 ============
 \begin{center}
-{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型 Agent 与 RAG 期末试卷}\\[0.3cm]
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型应用开发（AGENT+RAG）期末试卷}\\[0.3cm]
 {\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}
 \end{center}
 
@@ -102,20 +102,20 @@
 % ============ 一、选择题 ============
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
-\qitem{1}{关于经典 RAG（Retrieval-Augmented Generation）的基本流程，下列说法\textbf{正确}的是}{}
-\fourchoices{RAG 在推理时先由生成模型直接回答，再事后检索文档做事实校验}{RAG 将用户查询编码为向量，从外部知识库检索相关文档片段，将检索结果拼入 Prompt 后由 LLM 生成答案}{RAG 的核心思想是用检索模块完全替代 LLM 的参数记忆，推理阶段不再需要语言模型}{RAG 只能使用稀疏检索（如 BM25），无法与稠密向量检索结合}
+\qitem{1}{在 RAG 系统中，将长文档分割成若干块（Chunk）时，下列哪种做法最可能导致检索结果丢失跨块语义信息？}{}
+\fourchoices{固定字符数切分，无重叠}{基于段落边界切分，保留少量重叠}{利用句子嵌入相似度进行语义切分}{按 Token 数均匀切分，重叠比例为 20\%}
 
-\qitem{2}{ReAct（Reasoning and Acting）框架中，Agent 在每一步的典型输出格式为}{}
-\fourchoices{仅输出最终答案，不暴露中间推理过程}{交替生成 \texttt{Thought}（推理）、\texttt{Action}（工具调用）与 \texttt{Observation}（环境反馈），直至得出 \texttt{Final Answer}}{先执行所有工具调用，再一次性生成完整推理链}{将推理与行动解耦为两个独立模型，分别训练后级联推理}
+\qitem{2}{某 Agent 收到指令「查询北京今天天气，然后帮我把结果发送到邮箱」。它依次调用了 \texttt{get\_weather(city)} 和 \texttt{send\_email(content, address)} 两个工具。这种执行模式属于：}{}
+\fourchoices{单步 ReAct}{顺序依赖的 Plan-and-Execute}{并行工具调用}{动态 Re-planning}
 
-\qitem{3}{在稠密向量检索中，设查询嵌入 $\mathbf{q}$、文档嵌入 $\mathbf{d}$ 均已 L2 归一化。则余弦相似度 $\mathrm{sim}(\mathbf{q},\mathbf{d})$ 等于}{}
-\fourchoicestwo{$\|\mathbf{q}-\mathbf{d}\|_2$}{$\mathbf{q}^{\top}\mathbf{d}$}{$\dfrac{\mathbf{q}^{\top}\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}$}{$1-\|\mathbf{q}-\mathbf{d}\|_2^2$}
+\qitem{3}{关于 Embedding 模型在 RAG 中的角色，下列说法\textbf{错误}的是：}{}
+\fourchoices{将文本映射到低维稠密向量空间}{用于计算查询与文档块的语义相似度}{必须与 LLM 使用相同的分词器}{不同领域任务可能需要不同的微调 Embedding 模型}
 
-\qitem{4}{关于文档分块（Chunking）策略，下列说法\textbf{错误}的是}{}
-\fourchoices{分块过小会导致语义碎片化，检索到的片段缺乏完整上下文}{分块过大可能引入无关噪声，并更容易超出 LLM 上下文预算}{固定长度分块（Fixed-size Chunking）实现简单，但可能在句子或段落中间截断}{分块大小与检索效果无关，只要嵌入模型足够强大即可忽略分块策略}
+\qitem{4}{在 Agent 的记忆机制中，用于存储整个会话历史摘要的结构称为：}{}
+\fourchoicestwo{Working Memory}{Episodic Memory}{Semantic Memory}{Procedural Memory}
 
-\qitem{5}{BM25 是经典的稀疏检索算法。其打分函数中，词频 $f(q_i,D)$ 通过 $\dfrac{f(q_i,D)\cdot(k_1+1)}{f(q_i,D)+k_1\cdot\left(1-b+b\cdot\dfrac{|D|}{\mathrm{avgdl}}\right)}$ 进行饱和化处理，其中参数 $k_1$ 的直觉作用是}{}
-\fourchoices{控制文档长度归一化的强度}{控制词频饱和速度：$k_1$ 越大，高频词得分增长越慢}{控制逆文档频率 IDF 的权重}{控制查询词扩展的数量上限}
+\qitem{5}{假设你使用 BM25（稀疏检索）与 Dense Retrieval（稠密检索）进行混合检索（Hybrid Search），加权融合分数公式为 $\mathrm{score}=\alpha\cdot S_{\mathrm{dense}}+(1-\alpha)\cdot S_{\mathrm{bm25}}$。若希望优先保证高召回率，$\alpha$ 取值应倾向于：}{}
+\fourchoicestwo{接近 0}{接近 1}{0.5}{无法确定}
 
 \qitem{6}{关于 LLM 的 Function Calling / Tool Use 机制，下列说法\textbf{正确}的是}{}
 \fourchoices{工具调用结果必须由人工审核后才能返回给模型}{模型以结构化 JSON 输出工具名与参数，由外部 Runtime 执行后将 \texttt{Observation} 回注上下文，模型据此继续推理}{Function Calling 要求所有工具必须在模型预训练语料中出现过}{工具调用与 ReAct 框架互斥，二者不能在同一 Agent 中共存}
@@ -243,21 +243,21 @@ C & 9.1 & 0.61 & 3 \\
 
 \subsection*{\heiti 一、选择题答案}
 
-\fouranswerrow{1}{B}{2}{B}{3}{B}{4}{D}
+\fouranswerrow{1}{A}{2}{B}{3}{C}{4}{B}
 \fouranswerrow{5}{B}{6}{B}{7}{B}{8}{B}
 \fouranswerrow{9}{B}{10}{B}{11}{B}{12}{B}
 
 \vspace{0.3cm}
 
-\noindent\textbf{1. B}\quad 经典 RAG 流程：Query $\to$ Retriever $\to$ 相关文档 $\to$ 拼入 Prompt $\to$ LLM Generate。A 描述事后校验而非标准 RAG；C 错误：RAG 是增强而非替代 LLM；D 错误：可与稠密检索、混合检索结合。
+\noindent\textbf{1. A}\quad 固定字符数切分且无重叠，极易在句子、段落甚至实体名称中间强行截断，跨块语义关联完全断裂，且相邻块之间无任何冗余上下文可恢复。B/C/D 均通过边界感知或重叠机制保留了一定程度的跨块语义连续性。故选 A。
 
-\noindent\textbf{2. B}\quad ReAct 论文核心：交织生成 Thought（推理）、Action（工具名+参数）、Observation（执行结果），循环直至输出 Final Answer。A 为 Chain-of-Thought 无工具；C/D 不符合 ReAct 设计。
+\noindent\textbf{2. B}\quad 任务可分解为「先查天气 $\to$ 再发邮件」两个有先后依赖的子步骤，\texttt{send\_email} 的 \texttt{content} 依赖 \texttt{get\_weather} 的返回结果，属于按预定计划顺序执行的 Plan-and-Execute 模式。A 错误：涉及两次工具调用，非单步 ReAct；C 错误：两步存在依赖，无法并行；D 错误：无中途重规划迹象。故选 B。
 
-\noindent\textbf{3. B}\quad L2 归一化后 $\|\mathbf{q}\|=\|\mathbf{d}\|=1$，余弦相似度 $=\mathbf{q}^{\top}\mathbf{d}/(1\times1)=\mathbf{q}^{\top}\mathbf{d}$。C 是通用公式，归一化后等价于 B。
+\noindent\textbf{3. C}\quad Embedding 模型（如 BGE、E5、text-embedding-3）通常拥有独立于 LLM 的分词器与编码架构，RAG 流水线中二者解耦部署是常态。A/B/D 均为 Embedding 在 RAG 中的正确描述。故选 C。
 
-\noindent\textbf{4. D}\quad 分块策略显著影响检索质量：过小碎片化、过大引入噪声且占上下文。D 声称可忽略分块策略，明显错误。
+\noindent\textbf{4. B}\quad Episodic Memory（情节记忆）用于存储智能体与用户交互的具体经历，包括完整或\textbf{摘要化}的会话历史，保留时间线与事件脉络。Working Memory 为当前活跃上下文；Semantic Memory 存储从经历中抽象出的事实与知识；Procedural Memory 存储技能与操作流程。故选 B。
 
-\noindent\textbf{5. B}\quad $k_1$ 控制词频饱和：$k_1$ 越大，分母中 $f$ 影响越弱，高频词得分增长越慢。$b$ 才控制文档长度归一化；IDF 为独立项。
+\noindent\textbf{5. B}\quad 在多数语义检索场景下，稠密检索对同义表达、语义近邻的召回能力优于 BM25，提高 $\alpha$（接近 1）可加大稠密检索在融合分数中的权重，有利于提升整体召回率。$\alpha$ 接近 0 则偏向词汇匹配，可能漏掉语义相关但用词不同的文档。故选 B。
 
 \noindent\textbf{6. B}\quad 现代 LLM（GPT-4、Claude 等）通过 JSON Schema 输出结构化工具调用，Runtime 执行后回注结果。A 非必须；C 错误；D 错误：ReAct 与 Function Calling 常结合使用。
 
