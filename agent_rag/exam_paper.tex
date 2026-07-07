@@ -1,0 +1,410 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{tasks}
+\usepackage{array,tabularx}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{needspace}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 大模型 Agent 与 RAG 期末试卷}
+\fancyhead[R]{\small 第 \thepage\ 页}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% 工具命令
+\newcommand{\blank}[1]{\underline{\hspace{#1}}}
+\newcommand{\fn}[2]{\dfrac{#1}{#2}}
+
+% 大题标题
+\newcommand{\examsection}[2]{%
+  \vspace{0.6cm}
+  \noindent{\CJKfamily{SimHei}\bfseries\large #1\quad (#2)}\par
+  \vspace{0.3cm}
+}
+
+% 题号 + 题干
+\newcommand{\qitem}[2]{%
+  \noindent\textbf{#1.}\;#2\par
+  \vspace{0.3em}
+}
+
+% 选择题选项
+\newcommand{\fourchoices}[4]{%
+  \begin{enumerate}[label=(\Alph*),leftmargin=2.2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+    \setlength{\itemindent}{0pt}
+    \item #1
+    \item #2
+    \item #3
+    \item #4
+  \end{enumerate}
+  \vspace{0.4em}
+}
+
+\newcommand{\fourchoicestwo}[4]{%
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(A)}#1\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(B)}#2\end{minipage}\par
+  \noindent
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(C)}#3\end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}\makebox[2.2em][l]{(D)}#4\end{minipage}\par
+  \vspace{0.4em}
+}
+
+\newcommand{\fouranswerrow}[8]{%
+  \noindent
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#1.}}#2\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#3.}}#4\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#5.}}#6\end{minipage}%
+  \begin{minipage}[t]{0.25\linewidth}\makebox[2.5em][l]{\textbf{#7.}}#8\end{minipage}\par
+  \vspace{0.15em}
+}
+
+\newcommand{\answerlines}[1]{%
+  \vspace{0.2cm}
+  \foreach \i in {1,...,#1} {
+    \noindent{\color{white}\rule{\linewidth}{0.4pt}}\par\vspace{0.5cm}
+  }
+}
+
+\begin{document}
+
+% ============ 试卷标题与说明 ============
+\begin{center}
+{\zihao{2}\CJKfamily{SimHei}\bfseries 大模型 Agent 与 RAG 期末试卷}\\[0.3cm]
+{\zihao{4}\kaishu 满分 150 分 \quad 考试时间 150 分钟}
+\end{center}
+
+\vspace{1.5cm}
+\noindent\rule{\linewidth}{1pt}
+
+\vspace{0.2cm}
+\noindent{\CJKfamily{SimHei}\bfseries 注意事项：}
+\begin{enumerate}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
+  \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
+  \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
+  \item 本试卷中如无特殊说明，嵌入维度记为 $d$，检索 Top-$k$ 记为 $k$，语料库文档总数记为 $N$，单文档分块数记为 $C$，上下文窗口长度记为 $L_{\max}$，Agent 最大交互步数记为 $T_{\max}$，BM25 参数记为 $k_1,b$，向量已 L2 归一化时余弦相似度等于点积。
+\end{enumerate}
+
+\vspace{0.2cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+% ============ 一、选择题 ============
+\examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
+
+\qitem{1}{关于经典 RAG（Retrieval-Augmented Generation）的基本流程，下列说法\textbf{正确}的是}{}
+\fourchoices{RAG 在推理时先由生成模型直接回答，再事后检索文档做事实校验}{RAG 将用户查询编码为向量，从外部知识库检索相关文档片段，将检索结果拼入 Prompt 后由 LLM 生成答案}{RAG 的核心思想是用检索模块完全替代 LLM 的参数记忆，推理阶段不再需要语言模型}{RAG 只能使用稀疏检索（如 BM25），无法与稠密向量检索结合}
+
+\qitem{2}{ReAct（Reasoning and Acting）框架中，Agent 在每一步的典型输出格式为}{}
+\fourchoices{仅输出最终答案，不暴露中间推理过程}{交替生成 \texttt{Thought}（推理）、\texttt{Action}（工具调用）与 \texttt{Observation}（环境反馈），直至得出 \texttt{Final Answer}}{先执行所有工具调用，再一次性生成完整推理链}{将推理与行动解耦为两个独立模型，分别训练后级联推理}
+
+\qitem{3}{在稠密向量检索中，设查询嵌入 $\mathbf{q}$、文档嵌入 $\mathbf{d}$ 均已 L2 归一化。则余弦相似度 $\mathrm{sim}(\mathbf{q},\mathbf{d})$ 等于}{}
+\fourchoicestwo{$\|\mathbf{q}-\mathbf{d}\|_2$}{$\mathbf{q}^{\top}\mathbf{d}$}{$\dfrac{\mathbf{q}^{\top}\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}$}{$1-\|\mathbf{q}-\mathbf{d}\|_2^2$}
+
+\qitem{4}{关于文档分块（Chunking）策略，下列说法\textbf{错误}的是}{}
+\fourchoices{分块过小会导致语义碎片化，检索到的片段缺乏完整上下文}{分块过大可能引入无关噪声，并更容易超出 LLM 上下文预算}{固定长度分块（Fixed-size Chunking）实现简单，但可能在句子或段落中间截断}{分块大小与检索效果无关，只要嵌入模型足够强大即可忽略分块策略}
+
+\qitem{5}{BM25 是经典的稀疏检索算法。其打分函数中，词频 $f(q_i,D)$ 通过 $\dfrac{f(q_i,D)\cdot(k_1+1)}{f(q_i,D)+k_1\cdot\left(1-b+b\cdot\dfrac{|D|}{\mathrm{avgdl}}\right)}$ 进行饱和化处理，其中参数 $k_1$ 的直觉作用是}{}
+\fourchoices{控制文档长度归一化的强度}{控制词频饱和速度：$k_1$ 越大，高频词得分增长越慢}{控制逆文档频率 IDF 的权重}{控制查询词扩展的数量上限}
+
+\qitem{6}{关于 LLM 的 Function Calling / Tool Use 机制，下列说法\textbf{正确}的是}{}
+\fourchoices{工具调用结果必须由人工审核后才能返回给模型}{模型以结构化 JSON 输出工具名与参数，由外部 Runtime 执行后将 \texttt{Observation} 回注上下文，模型据此继续推理}{Function Calling 要求所有工具必须在模型预训练语料中出现过}{工具调用与 ReAct 框架互斥，二者不能在同一 Agent 中共存}
+
+\qitem{7}{HNSW（Hierarchical Navigable Small World）是一种常用的近似最近邻（ANN）索引结构。其核心思想是}{}
+\fourchoices{暴力遍历全部向量，保证检索结果 100\% 精确}{构建多层图结构，上层做粗粒度导航、下层做精细搜索，以亚线性时间近似找到最近邻}{将向量量化为 8-bit 整数后建立倒排索引，仅支持稀疏检索}{按文档发布时间排序，只检索最新文档}
+
+\qitem{8}{Self-RAG 相对朴素 RAG 的关键改进是}{}
+\fourchoices{完全去掉检索模块，仅依赖模型参数记忆}{模型在生成过程中自主决定「是否检索」「检索内容是否相关」「生成内容是否有依据」，并引入反思 Token}{将 RAG 改为离线批处理，不支持在线问答}{用 GAN 对抗训练检索器与生成器}
+
+\qitem{9}{在 Agent 记忆体系中，下列归类\textbf{正确}的是}{}
+\fourchoices{对话历史窗口内的消息属于长期记忆；向量数据库中的用户画像属于短期记忆}{当前会话的上下文窗口属于工作记忆（短期），跨会话持久化的向量库/摘要属于长期记忆}{所有记忆都必须存入 KV Cache，否则 Agent 无法推理}{Agent 记忆与 RAG 知识库完全等价，只是命名不同}
+
+\qitem{10}{「Lost in the Middle」现象指的是}{}
+\fourchoices{检索器将最相关的文档排在中间位置，导致排序模型失效}{LLM 对位于长上下文\textbf{中间}位置的检索文档利用率显著低于首尾位置，中间信息容易被忽略}{向量数据库中间层的 HNSW 节点最容易丢失}{多 Agent 协作时，中间 Agent 的通信带宽成为瓶颈}
+
+\qitem{11}{CRAG（Corrective Retrieval-Augmented Generation）针对朴素 RAG 检索质量不稳定的问题，其核心机制是}{}
+\fourchoices{永远不使用检索，直接让 LLM 回答}{引入轻量级检索评估器，根据检索置信度将结果分为 Correct / Incorrect / Ambiguous，并分别触发「直接生成」「网络搜索补充」「知识精炼」等纠正动作}{强制每次检索 Top-100 文档以保证召回率}{用强化学习端到端训练检索器，不再需要评估模块}
+
+\qitem{12}{在多 Agent 系统中，下列协作模式与其典型特征匹配\textbf{正确}的是}{}
+\fourchoices{层级式（Hierarchical）— 所有 Agent 地位平等，通过投票决策；适合简单任务}{流水线式（Pipeline）— 各 Agent 按固定顺序处理子任务，上游输出作为下游输入；适合可分解的多阶段任务}{对抗式（Adversarial）— 仅用于 GAN 训练，与 Agent 无关}{单 Agent 一定优于多 Agent，因为避免了通信开销}
+
+% ============ 二、填空题 ============
+\examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
+
+\qitem{13}{某知识库含 $N=10{,}000$ 篇文档，平均每篇切分为 $C=5$ 个 Chunk，则向量索引中需存储的向量条目总数为 \blank{2.5cm}。}{}
+
+\qitem{14}{设查询 $\mathbf{q}=[1,0]^{\top}$，文档 A 嵌入 $\mathbf{d}_A=[\tfrac{\sqrt{3}}{2},\tfrac{1}{2}]^{\top}$，文档 B 嵌入 $\mathbf{d}_B=[0,1]^{\top}$（均已 L2 归一化）。则 $\mathrm{sim}(\mathbf{q},\mathbf{d}_A)=$ \blank{2cm}，$\mathrm{sim}(\mathbf{q},\mathbf{d}_B)=$ \blank{2cm}，检索 Top-1 应返回文档 \blank{1.5cm}。}{}
+
+\qitem{15}{朴素 RAG 中，若 LLM 上下文上限 $L_{\max}=8192$ tokens，系统 Prompt 与问题共占 500 tokens，每个检索 Chunk 平均 400 tokens，为生成预留 500 tokens，则最多可拼接 \blank{2cm} 个 Chunk。}{}
+
+\qitem{16}{BM25 打分公式中，逆文档频率项 $\mathrm{IDF}(q_i)=\ln\!\left(\dfrac{N-n(q_i)+0.5}{n(q_i)+0.5}+1\right)$，其中 $n(q_i)$ 为包含词 $q_i$ 的文档数。若语料 $N=1000$，某查询词出现在 $n(q_i)=10$ 篇文档中，则 $\mathrm{IDF}(q_i)\approx$ \blank{2.5cm}（取 $\ln 100\approx 4.61$，保留两位小数）。}{}
+
+\qitem{17}{ReAct Agent 设最大步数 $T_{\max}=8$，每步包含 1 次 LLM 调用与 1 次工具调用。若 LLM 平均延迟 2s，工具平均延迟 0.5s，则该 Agent 单次任务最坏情况下的端到端延迟约为 \blank{2.5cm} 秒。}{}
+
+\qitem{18}{混合检索中，Reciprocal Rank Fusion（RRF）将稠密检索排名 $r_d$ 与稀疏检索排名 $r_s$ 融合，标准公式为 $\mathrm{RRF}(d)=\dfrac{1}{k+r_d}+\dfrac{1}{k+r_s}$，常取 $k=60$。若某文档在稠密检索中排名第 1、稀疏检索中排名第 4，则其 RRF 得分为 \blank{3cm}（保留四位小数）。}{}
+
+% ============ 三、解答题 ============
+\examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
+
+\qitem{19}{（本小题满分 10 分）}{}
+\noindent 设语料库经分块后共有 $M$ 个 Chunk，嵌入维度为 $d$，使用暴力精确检索（Flat Index）。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出查询向量 $\mathbf{q}\in\mathbb{R}^d$ 与全部 Chunk 向量做余弦相似度检索时，单次检索的时间复杂度（用 $M,d$ 表示）；（3 分）
+  \item 若 $M=5\times10^6$，$d=1024$，估算暴力检索需执行的浮点运算量级，并说明为何生产环境通常采用 ANN 索引；（3 分）
+  \item 对比 Flat、IVF（倒排文件）、HNSW 三种索引在检索精度、构建时间与查询延迟上的典型权衡。（4 分）
+\end{enumerate}
+
+\answerlines{8}
+
+\needspace{6cm}
+\qitem{20}{（本小题满分 10 分）}{}
+\noindent ReAct 框架将推理与行动交织。设 Agent 可用工具集 $\mathcal{T}=\{\texttt{search},\texttt{calculator},\texttt{finish}\}$，用户问题为：「2024 年诺贝尔物理学奖得主是谁？该得主的代表性论文标题是什么？」
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 写出符合 ReAct 格式的完整交互轨迹（至少包含 2 次 \texttt{Thought-Action-Observation} 循环），展示 Agent 如何分解任务并调用工具；（5 分）
+  \item 对比 ReAct 与「先规划后执行」（Plan-and-Execute）两种范式：各自优势、适用场景与主要失败模式各举一点。（5 分）
+\end{enumerate}
+
+\answerlines{12}
+
+\needspace{6cm}
+\qitem{21}{（本小题满分 10 分）}{}
+\noindent 混合检索（Hybrid Search）常将 BM25 稀疏分数 $s_{\mathrm{sparse}}$ 与稠密相似度 $s_{\mathrm{dense}}$ 融合。设对某查询，三个候选文档的得分如下：
+\begin{center}
+\begin{tabular}{c|ccc}
+\hline
+文档 & $s_{\mathrm{sparse}}$ & $s_{\mathrm{dense}}$ & 稠密排名 $r_d$ \\
+\hline
+A & 8.2 & 0.72 & 2 \\
+B & 6.5 & 0.85 & 1 \\
+C & 9.1 & 0.61 & 3 \\
+\hline
+\end{tabular}
+\end{center}
+稀疏检索排名为 A$>$C$>$B（即 $r_s(A)=1,r_s(C)=2,r_s(B)=3$）。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 分别用线性加权 $s=\alpha s_{\mathrm{sparse}}+(1-\alpha)s_{\mathrm{dense}}$（$\alpha=0.5$，需先将 $s_{\mathrm{sparse}}$ 归一化到 $[0,1]$：$s'_{\mathrm{sparse}}=s_{\mathrm{sparse}}/9.1$）与 RRF（$k=60$）计算三文档最终排名；（6 分）
+  \item 解释为何 RRF 不依赖各检索器原始分数的绝对尺度，在工程上更稳健；（2 分）
+  \item 列举一种除线性加权与 RRF 外的融合策略，并说明其适用场景。（2 分）
+\end{enumerate}
+
+\answerlines{8}
+
+\needspace{6cm}
+\qitem{22}{（本小题满分 10 分）}{}
+\noindent 朴素 RAG 在长上下文场景下面临「检索噪声」与「Lost in the Middle」两类问题。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 解释 Lost in the Middle 的实验现象及其对 RAG Prompt 设计的启示；（4 分）
+  \item 描述 Reranker（重排序）在 RAG 流水线中的位置与作用；若初检 Top-$k=20$，重排后取 Top-$k'=5$，分析对延迟与质量的影响；（3 分）
+  \item 介绍 Self-RAG 或 CRAG 中至少一种「检索质量自评估/纠正」机制，说明其如何缓解检索失败。（3 分）
+\end{enumerate}
+
+\answerlines{10}
+
+\needspace{6cm}
+\qitem{23}{（本小题满分 10 分）}{}
+\noindent Graph RAG（如 Microsoft GraphRAG）将知识库构建为实体—关系图，以支持全局性问答。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 对比「向量 Chunk RAG」与「Graph RAG」在索引构建、检索路径与擅长问题类型上的差异；（4 分）
+  \item 描述 Graph RAG 中 Community Summary（社区摘要）的构建流程及其在「总结性问题」（如「该数据集的主要研究主题有哪些？」）中的作用；（3 分）
+  \item 分析 Graph RAG 相对朴素向量 RAG 的主要成本与局限。（3 分）
+\end{enumerate}
+
+\answerlines{10}
+
+\needspace{6cm}
+\qitem{24}{（本小题满分 10 分，压轴）}{}
+\noindent 某企业需构建「智能客服 Agent」，要求：能查询内部产品文档（RAG）、调用订单 API（Tool）、多轮记住用户意图（Memory），并在检索失败时降级处理。资源：7B 指令模型 + 向量数据库 + 3 个 REST API。
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 画出该 Agent 的完整架构数据流（从用户输入到最终回复），标注 RAG、Tool、Memory、Planner 各模块及其交互顺序；（4 分）
+  \item 设计检索失败（Top-$k$ 文档与查询相似度均低于阈值 $\tau$）时的三级降级策略；（3 分）
+  \item 从延迟、成本、安全三个维度，各提出一条可落地的优化或防护措施，并说明预期副作用。（3 分）
+\end{enumerate}
+
+\answerlines{14}
+
+% ============ 答案另起一页 ============
+\newpage
+\begin{center}
+{\zihao{2}\heiti 参考答案与解析}\\[0.3cm]
+{\small 命题：大模型 Agent 与 RAG 课程组 \quad 校对：教研组}
+\end{center}
+\vspace{0.3cm}
+\noindent\rule{\linewidth}{0.6pt}
+
+\subsection*{\heiti 一、选择题答案}
+
+\fouranswerrow{1}{B}{2}{B}{3}{B}{4}{D}
+\fouranswerrow{5}{B}{6}{B}{7}{B}{8}{B}
+\fouranswerrow{9}{B}{10}{B}{11}{B}{12}{B}
+
+\vspace{0.3cm}
+
+\noindent\textbf{1. B}\quad 经典 RAG 流程：Query $\to$ Retriever $\to$ 相关文档 $\to$ 拼入 Prompt $\to$ LLM Generate。A 描述事后校验而非标准 RAG；C 错误：RAG 是增强而非替代 LLM；D 错误：可与稠密检索、混合检索结合。
+
+\noindent\textbf{2. B}\quad ReAct 论文核心：交织生成 Thought（推理）、Action（工具名+参数）、Observation（执行结果），循环直至输出 Final Answer。A 为 Chain-of-Thought 无工具；C/D 不符合 ReAct 设计。
+
+\noindent\textbf{3. B}\quad L2 归一化后 $\|\mathbf{q}\|=\|\mathbf{d}\|=1$，余弦相似度 $=\mathbf{q}^{\top}\mathbf{d}/(1\times1)=\mathbf{q}^{\top}\mathbf{d}$。C 是通用公式，归一化后等价于 B。
+
+\noindent\textbf{4. D}\quad 分块策略显著影响检索质量：过小碎片化、过大引入噪声且占上下文。D 声称可忽略分块策略，明显错误。
+
+\noindent\textbf{5. B}\quad $k_1$ 控制词频饱和：$k_1$ 越大，分母中 $f$ 影响越弱，高频词得分增长越慢。$b$ 才控制文档长度归一化；IDF 为独立项。
+
+\noindent\textbf{6. B}\quad 现代 LLM（GPT-4、Claude 等）通过 JSON Schema 输出结构化工具调用，Runtime 执行后回注结果。A 非必须；C 错误；D 错误：ReAct 与 Function Calling 常结合使用。
+
+\noindent\textbf{7. B}\quad HNSW 构建多层小世界图，上层长跳、下层短跳，实现近似最近邻搜索，查询复杂度约 $O(\log N)$。A 为暴力精确；C 描述标量量化；D 无关。
+
+\noindent\textbf{8. B}\quad Self-RAG 引入 \texttt{[Retrieve]}、\texttt{[IsRel]}、\texttt{[IsSup]}、\texttt{[IsUse]} 等反思 Token，模型自主决定检索与生成策略。A/C/D 均不符合 Self-RAG 设计。
+
+\noindent\textbf{9. B}\quad 工作记忆 = 当前上下文窗口；长期记忆 = 跨会话持久化（向量库、摘要、用户画像等）。A 颠倒；C/D 错误。
+
+\noindent\textbf{10. B}\quad Liu 等人实验表明，LLM 对长上下文中\textbf{中间}位置信息利用率低，首尾信息更易被关注。这对 RAG 中检索文档的排列策略有重要启示。
+
+\noindent\textbf{11. B}\quad CRAG 用轻量 T5 评估器判断检索质量，分三档触发不同纠正策略（直接生成 / Web 搜索 / 知识精炼）。A/C/D 均非 CRAG 核心。
+
+\noindent\textbf{12. B}\quad 流水线式适合可分解任务（如研究$\to$写作$\to$审核）。A 描述的是平等协作而非层级；C 对抗式也用于 red-teaming；D 过于绝对。
+
+\subsection*{\heiti 二、填空题答案}
+
+\noindent\textbf{13.}\quad $50000$\quad 总 Chunk 数 $=N\times C=10000\times5=50000$。
+
+\noindent\textbf{14.}\quad $\dfrac{\sqrt{3}}{2}$（或 $0.87$）\quad；\quad $0$\quad；\quad A\quad $\mathbf{q}^{\top}\mathbf{d}_A=\tfrac{\sqrt{3}}{2}\approx0.866$，$\mathbf{q}^{\top}\mathbf{d}_B=0$，故 Top-1 为 A。
+
+\noindent\textbf{15.}\quad $16$\quad 可用于 Chunk 的 token 预算 $=8192-500-500=7192$，$7192/400=17.98$，最多 17 个；若「系统 Prompt 与问题共 500」已含预留则按 $8192-500-500=7192$ 得 17。按题意三处独立占用：$8192-500-400k-500\ge0\Rightarrow k\le16.755$，取 $\boxed{16}$。
+
+\noindent\textbf{16.}\quad $4.61$\quad $\mathrm{IDF}=\ln\!\left(\dfrac{1000-10+0.5}{10+0.5}+1\right)=\ln\!\left(\dfrac{990.5}{10.5}+1\right)=\ln(95.29)\approx4.61$。
+
+\noindent\textbf{17.}\quad $20$\quad 每步 $2+0.5=2.5$s，8 步共 $8\times2.5=20$s。
+
+\noindent\textbf{18.}\quad $0.0320$\quad $\mathrm{RRF}=\dfrac{1}{60+1}+\dfrac{1}{60+4}=\dfrac{1}{61}+\dfrac{1}{64}\approx0.01639+0.01563=0.0320$。
+
+\subsection*{\heiti 三、解答题答案}
+
+\subsubsection*{19. 向量检索复杂度与索引权衡（10 分）}
+
+\noindent\textbf{(1) 时间复杂度（3 分）}
+
+暴力检索需计算 $M$ 个 $d$ 维向量的点积/余弦，复杂度为 $O(Md)$。若含排序 Top-$k$，为 $O(Md + M\log k)$，主导项 $O(Md)$。
+
+\noindent\textbf{(2) 运算量级与 ANN 必要性（3 分）}
+
+$M=5\times10^6$，$d=1024$，浮点运算 $\approx5\times10^6\times1024\approx5.12\times10^9$ 次（约 51 亿次）/查询。生产环境 QPS 要求高，暴力检索延迟与算力成本不可接受，故采用 HNSW/IVF 等 ANN 将复杂度降至亚线性，以略损召回换取数量级加速。
+
+\noindent\textbf{(3) 三种索引权衡（4 分）}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item \textbf{Flat}：100\% 精确召回，查询 $O(Md)$，无构建开销，仅适合小规模。
+  \item \textbf{IVF}：K-means 聚类后只搜最近若干簇，构建需聚类训练，查询快但可能漏检跨簇近邻。
+  \item \textbf{HNSW}：图索引，构建慢、内存大，查询极快（$O(\log M)$ 级），召回率通常优于 IVF，是大规模生产首选。
+\end{itemize}
+
+\subsubsection*{20. ReAct 交互轨迹与范式对比（10 分）}
+
+\noindent\textbf{(1) ReAct 轨迹示例（5 分）}
+
+\texttt{Thought 1:} 需要先查询 2024 年诺贝尔物理学奖得主。\\
+\texttt{Action 1:} search(``2024 Nobel Prize in Physics winner'')\\
+\texttt{Observation 1:} John J. Hopfield and Geoffrey E. Hinton were awarded the 2024 Nobel Prize in Physics for foundational work on artificial neural networks.\\
+\texttt{Thought 2:} 得主为 Hopfield 和 Hinton，需进一步查 Hinton 的代表性论文。\\
+\texttt{Action 2:} search(``Geoffrey Hinton representative paper'')\\
+\texttt{Observation 2:} ``Learning representations by back-propagating errors'' (Nature, 1986); ``ImageNet classification with deep convolutional neural networks'' (NIPS, 2012).\\
+\texttt{Thought 3:} 已获足够信息，可作答。\\
+\texttt{Action 3:} finish(``2024 年诺贝尔物理学奖授予 John Hopfield 与 Geoffrey Hinton。Hinton 代表性论文包括：Learning representations by back-propagating errors (1986) 等。'')
+
+\noindent\textbf{(2) ReAct vs Plan-and-Execute（5 分）}
+
+\textbf{ReAct}：边想边做，灵活应对环境反馈；适合工具结果不确定、需动态调整的任务；失败模式：步数过多、陷入重复调用。\\
+\textbf{Plan-and-Execute}：先产出完整计划再逐步执行；适合步骤清晰、可分解的长任务；失败模式：计划一旦错误难以中途大幅修正，对动态环境适应性弱。
+
+\subsubsection*{21. 混合检索融合计算（10 分）}
+
+\noindent\textbf{(1) 两种融合排名（6 分）}
+
+\textbf{线性加权}（$\alpha=0.5$，$s'_{\mathrm{sparse}}=s/9.1$）：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item A: $0.5\times(8.2/9.1)+0.5\times0.72=0.451+0.36=0.811$
+  \item B: $0.5\times(6.5/9.1)+0.5\times0.85=0.357+0.425=0.782$
+  \item C: $0.5\times(9.1/9.1)+0.5\times0.61=0.5+0.305=0.805$
+\end{itemize}
+线性加权排名：A $>$ C $>$ B。
+
+\textbf{RRF}（$k=60$）：
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item A: $1/61+1/61\approx0.0328$（$r_d=2,r_s=1$）
+  \item B: $1/61+1/63\approx0.0323$（$r_d=1,r_s=3$）
+  \item C: $1/63+1/62\approx0.0320$（$r_d=3,r_s=2$）
+\end{itemize}
+RRF 排名：A $>$ B $>$ C。两种方法可给出不同排序，体现融合策略影响。
+
+\noindent\textbf{(2) RRF 稳健性（2 分）}
+
+RRF 仅依赖排名次序，不涉及 BM25 分数（无界）与余弦相似度（$[0,1]$）的尺度对齐问题，无需额外归一化或调参 $\alpha$，工程实现更简单稳健。
+
+\noindent\textbf{(3) 其他融合策略（2 分）}
+
+\textbf{Cross-Encoder Reranker}：用 BERT 类模型对 Query-Document 对联合编码打分，精度高但延迟大，适合初检 Top-20 后精排 Top-5。或 \textbf{级联（Cascade）}：先用 BM25 粗筛 Top-100，再用稠密检索精排。
+
+\subsubsection*{22. RAG 长上下文问题与纠正机制（10 分）}
+
+\noindent\textbf{(1) Lost in the Middle（4 分）}
+
+实验发现：将检索文档按相关性排序插入 Prompt 时，LLM 对\textbf{首尾}文档利用率最高，\textbf{中间}文档的关键信息易被忽略。启示：（i）最相关文档应放在上下文首尾；（ii）控制注入文档数量，避免过长；（iii）可用重排+摘要压缩中间文档。
+
+\noindent\textbf{(2) Reranker 作用（3 分）}
+
+位置：初检（Bi-Encoder 双塔召回）之后、拼 Prompt 之前。Cross-Encoder 对 $(q,d)$ 联合编码，精度远高于双塔。Top-20 $\to$ Top-5：延迟增加（20 次交叉编码），但显著减少噪声文档，提升答案忠实度与利用率。
+
+\noindent\textbf{(3) Self-RAG / CRAG 纠正（3 分）}
+
+\textbf{Self-RAG}：生成 \texttt{[Retrieve]} Token 决定是否检索；\texttt{[IsRel]} 判断文档相关性；\texttt{[IsSup]} 判断生成是否有据，无据则重新检索或修订。\\
+\textbf{CRAG}：检索评估器输出置信度，低置信时触发 Web 搜索或内部知识精炼（过滤无关片段），避免将垃圾检索结果直接注入 Prompt。
+
+\subsubsection*{23. Graph RAG 架构分析（10 分）}
+
+\noindent\textbf{(1) 向量 RAG vs Graph RAG（4 分）}
+
+\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
+  \item \textbf{索引}：向量 RAG 对 Chunk 嵌入；Graph RAG 用 LLM 抽取实体/关系建图，再做社区检测。
+  \item \textbf{检索}：向量 RAG 为相似度 Top-$k$；Graph RAG 可沿图游走、查社区摘要，支持多跳推理。
+  \item \textbf{擅长问题}：向量 RAG 适合事实型点对点问答；Graph RAG 适合全局总结、主题归纳、跨文档关联分析。
+\end{itemize}
+
+\noindent\textbf{(2) Community Summary（3 分）}
+
+流程：实体关系图 $\to$ Leiden/Louvain 社区发现 $\to$ 对每个社区用 LLM 生成层级摘要（由细到粗）。回答总结性问题时，检索相关社区摘要而非零散 Chunk，可提供更宏观、结构化的上下文。
+
+\noindent\textbf{(3) 成本与局限（3 分）}
+
+成本：图构建需对全库做实体抽取（大量 LLM 调用），索引构建昂贵；图更新需增量维护。局限：细粒度事实问答可能不如 Chunk RAG 精准；图质量依赖抽取准确性，错误会传播放大。
+
+\subsubsection*{24. 企业智能客服 Agent 综合设计（10 分）}
+
+\noindent\textbf{(1) 架构数据流（4 分）}
+
+用户输入 $\to$ \textbf{Memory}（加载会话历史/用户画像）$\to$ \textbf{Planner/Router}（判断意图：查文档 / 查订单 / 闲聊）\\
+$\to$ 若需知识：\textbf{RAG}（Query 改写 $\to$ 向量检索 $\to$ Rerank $\to$ 拼上下文）\\
+$\to$ 若需操作：\textbf{Tool}（Function Calling 调用订单 API）\\
+$\to$ LLM 综合 Memory + RAG 上下文 + Tool Observation 生成回复 $\to$ 更新 Memory $\to$ 返回用户。
+
+\noindent\textbf{(2) 三级降级策略（3 分）}
+
+\textbf{Level 1}：降低阈值 $\tau$，扩大 Top-$k$，尝试 Query 改写后重检。\\
+\textbf{Level 2}：触发 Web 搜索或 FAQ 关键词匹配补充。\\
+\textbf{Level 3}：诚实告知「未找到相关信息」，提供人工客服转接入口，禁止凭空编造。
+
+\noindent\textbf{(3) 优化与防护（3 分）}
+
+\textbf{延迟}：初检 Top-20 + Rerank Top-5，对高频 Query 做语义缓存；副作用：缓存可能导致旧政策回答滞后。\\
+\textbf{成本}：小模型做意图路由/Rerank，仅复杂问题调用大模型；副作用：路由错误会级联影响质量。\\
+\textbf{安全}：Tool 调用白名单 + 参数校验 + 订单 API 鉴权；对用户输入做 Prompt Injection 检测；副作用：过严校验可能误拦合法请求。
+
+\end{document}
