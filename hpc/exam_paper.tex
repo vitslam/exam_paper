@@ -24,6 +24,22 @@
 \newcommand{\blank}[1]{\underline{\hspace{#1}}}
 \newcommand{\fn}[2]{\dfrac{#1}{#2}}
 
+% 论文配图占位符（请将对应论文中的原图粘贴替换此处）
+\newcommand{\figplaceholder}[2]{%
+  \begin{center}
+  \fcolorbox{gray!60}{gray!5}{%
+    \begin{minipage}{0.88\linewidth}
+    \vspace{0.3cm}
+    \centering
+    {\small\bfseries [配图占位符]}\\[0.2cm]
+    {\small #1}\\[0.15cm]
+    {\footnotesize\kaishu 图源：#2}
+    \vspace{0.3cm}
+    \end{minipage}}
+  \end{center}
+  \vspace{0.3cm}
+}
+
 \newcommand{\examsection}[2]{%
   \vspace{0.6cm}
   \noindent{\CJKfamily{SimHei}\bfseries\large #1\quad (#2)}\par
@@ -79,7 +95,7 @@
   \item 本试卷共 \textbf{三} 大题，包括选择题、填空题、解答题，共 \textbf{24} 小题。
   \item 请将答案写在答题区指定位置；解答题须写出必要的文字说明、推导过程或演算步骤。
   \item 涉及数学公式推导时，请清晰写出关键中间步骤；只写最终结果不得分。
-  \item 本试卷中如无特殊说明，GEMM 维度记为 $C_{M\times N}=A_{M\times K}B_{K\times N}$；HBM 峰值带宽记 $B_w$（GB/s）；峰值算力记 $P_{\mathrm{peak}}$（TFLOPS）；SRAM 容量记 $M_{\mathrm{sram}}$；Warp 大小默认 32；fp16 每标量 2 字节，fp32 每标量 4 字节。
+  \item 本试卷中如无特殊说明，GEMM 维度记为 $C_{M\times N}=A_{M\times K}B_{K\times N}$；HBM 峰值带宽记 $B_w$（GB/s）；峰值算力记 $P_{\mathrm{peak}}$（TFLOPS）；SRAM 容量记 $M_{\mathrm{sram}}$；Warp 大小默认 32；fp16 每标量 2 字节，fp32 每标量 4 字节。涉及 GPU 硬件参数时，默认指 NVIDIA H100-80GB（SXM 形态）。
 \end{enumerate}
 
 \vspace{0.2cm}
@@ -87,122 +103,163 @@
 
 \examsection{一、选择题}{本大题共 12 小题，每小题 5 分，共 60 分。在每小题给出的四个选项中，只有一项是符合题目要求的。}
 
-\qitem{1}{关于 NVIDIA GPU 中流多处理器（Streaming Multiprocessor, SM）的基本结构，下列说法\textbf{正确}的是}{}
-\fourchoices{每个 SM 仅包含一个 CUDA Core，所有线程串行执行}{每个 SM 拥有独立的 Warp 调度器，可将 32 个线程组成一个 Warp 进行 SIMT 调度}{SM 内的 Shared Memory 与 L2 Cache 物理上是同一块存储区域}{寄存器文件（Register File）位于 HBM 上，所有 SM 共享访问}
+\qitem{1}{现代 NVIDIA GPU（如 H100）将大量计算单元组织为流多处理器（Streaming Multiprocessor, SM）。每个 SM 内含 CUDA Core（通用浮点/整数运算）、Tensor Core（矩阵乘累加 MMA）、Warp 调度器、Shared Memory（片上可编程缓存）和 Register File（线程私有寄存器）。线程以 Warp 为单位被调度（默认 32 线程/Warp），同一 Warp 内线程执行相同指令流（SIMT 模型）。关于上述结构，下列说法\textbf{正确}的是}{}
+\fourchoices{每个 SM 仅包含一个 CUDA Core，所有线程在同一时刻只能串行执行一条指令}{每个 SM 拥有独立的 Warp 调度器，可将 32 个线程组成一个 Warp 进行 SIMT 调度；Warp 内线程若遇分支发散（Branch Divergence）会导致部分线程空闲}{SM 内的 Shared Memory 与 L2 Cache 在物理上是同一块存储，只是软件命名不同}{寄存器文件（Register File）位于 HBM 上，所有 SM 通过 PCIe 总线共享访问，延迟与 Global Memory 相同}
 
-\qitem{2}{关于 GPU 显存层级（HBM $\to$ L2 $\to$ Shared Memory $\to$ Register）的带宽与延迟特性，下列排序\textbf{正确}的是（从左到右：带宽递减 / 延迟递增）}{}
+\qitem{2}{GPU 存储层级从快到慢依次为 Register $\to$ Shared Memory $\to$ L2 Cache $\to$ HBM（高带宽内存）。各级存储在容量、带宽和访问延迟上差异显著：Register 最快但每线程仅有数千字节；Shared Memory 为 SM 内共享、需程序员显式管理；L2 为芯片级统一缓存；HBM 容量最大（如 H100 为 80GB）但延迟最高。高效 Kernel 设计的核心目标之一，就是将数据尽可能长时间停留在高速存储层。关于带宽与延迟的排序，下列\textbf{正确}的是（从左到右：带宽递减 / 延迟递增）}{}
 \fourchoices{Register $>$ Shared Memory $>$ L2 $>$ HBM}{HBM $>$ L2 $>$ Shared Memory $>$ Register}{Shared Memory $>$ Register $>$ HBM $>$ L2}{L2 $>$ HBM $>$ Register $>$ Shared Memory}
 
-\qitem{3}{Roofline 模型中，设某算子的算术强度为 $I$（单位：FLOP/Byte），硬件 Ridge Point 为 $I^*=\dfrac{P_{\mathrm{peak}}}{B_w}$。当 $I < I^*$ 时，该算子处于}{}
-\fourchoicestwo{Compute-bound（计算受限）}{Memory-bound（带宽受限）}{通信受限（Communication-bound）}{Launch-bound（启动开销受限）}
+\qitem{3}{Roofline 模型（Williams et al., 2009）用算术强度 $I$（FLOP/Byte，即每从 HBM 搬运 1 字节数据能完成多少浮点运算）判断算子瓶颈。硬件 Ridge Point 定义为 $I^*=\dfrac{P_{\mathrm{peak}}}{B_w}$，其中 $P_{\mathrm{peak}}$ 为峰值算力、$B_w$ 为 HBM 峰值带宽。实际吞吐 $\approx\min(P_{\mathrm{peak}},\, I\cdot B_w)$：当 $I<I^*$ 时算力无法跑满，性能受带宽限制；当 $I>I^*$ 时带宽足够，性能受算力限制。大模型 Decode 阶段 GEMM 的 $M$ 维（批大小）很小，算术强度往往极低。当 $I < I^*$ 时，该算子处于}{}
+\fourchoicestwo{Compute-bound（计算受限），应优先提升 Tensor Core 利用率}{Memory-bound（带宽受限），应优先减少 HBM 访问量或提高数据复用}{通信受限（Communication-bound），应优先优化 NCCL 拓扑}{Launch-bound（启动开销受限），应优先减少 Kernel 数量}
 
-\qitem{4}{设矩阵乘法 $C_{M\times N}=A_{M\times K}B_{K\times N}$，则完成该 GEMM 所需的浮点运算量（FLOPs）为}{}
-\fourchoicestwo{$MNK$}{$2MNK$}{$3MNK$}{$MN+NK+MK$}
+\qitem{4}{矩阵乘法 $C_{M\times N}=A_{M\times K}B_{K\times N}$ 是大模型中最核心的算子（Attention 投影、FFN 线性层等）。每个输出元素 $C_{ij}=\sum_{k=1}^{K}A_{ik}B_{kj}$ 需要 $K$ 次乘加（MAC，Multiply-Accumulate）。在 FLOPs 统计中，1 次 MAC 计为 2 次浮点运算（1 次乘法 + 1 次加法）。因此，完成整个 GEMM 所需的浮点运算量（FLOPs）为}{}
+\fourchoicestwo{$MNK$（仅计乘法次数）}{$2MNK$}{$3MNK$}{$MN+NK+MK$（仅计矩阵元素总数）}
 
-\qitem{5}{关于 Google TPU 与 NVIDIA GPU 的架构差异，下列说法\textbf{正确}的是}{}
-\fourchoices{TPU 采用 SIMT 模型，每个线程独立执行不同指令流}{TPU 核心为二维脉动阵列（Systolic Array），数据在阵列中按固定节奏流动完成矩阵乘累加}{GPU 的 Tensor Core 与 TPU 脉动阵列在数据流上完全相同，只是命名不同}{NPU 泛指所有神经网络加速器，与 TPU 在架构上无任何区别}
+\qitem{5}{Google TPU 与 NVIDIA GPU 代表了两种不同的 AI 加速器设计哲学。GPU 采用 SIMT（单指令多线程）模型，擅长通用并行计算和复杂控制流；TPU 采用专用脉动阵列（Systolic Array），权重矩阵预加载到阵列中，激活值按固定节奏"流动"穿过阵列完成 MAC，数据流高度规整。TPU 在规整的大矩阵乘法上效率极高，但对不规则访存和控制流支持较弱。关于二者架构差异，下列说法\textbf{正确}的是}{}
+\fourchoices{TPU 采用与 GPU 完全相同的 SIMT 模型，每个 TPU Core 可独立执行不同分支指令}{TPU 核心为二维脉动阵列（Systolic Array），数据在阵列中按固定节奏流动完成矩阵乘累加，无需像 GPU 那样为每个线程维护独立 PC}{GPU 的 Tensor Core 与 TPU 脉动阵列在硬件数据流上完全相同，只是 NVIDIA 的 marketing 命名不同}{NPU 是专有名词，仅指华为昇腾芯片，与 TPU、GPU 在架构上无任何可比性}
 
-\qitem{6}{关于算子融合（Kernel Fusion）在大模型推理中的收益，下列说法\textbf{错误}的是}{}
-\fourchoices{融合多个算子可减少 Kernel Launch 次数，降低 CPU 调度开销}{融合后中间结果可保留在寄存器或 Shared Memory 中，减少 HBM 往返}{算子融合一定能将任意两个算子的总执行时间减半}{RMSNorm + Linear 融合是工业界常见的融合模式}
+\qitem{6}{算子融合（Kernel Fusion）是编译器与手写 Kernel 中常用的优化手段：将多个连续算子（如 RMSNorm $\to$ Linear $\to$ SiLU）合并为单个 CUDA/Triton Kernel，使中间结果保留在寄存器或 Shared Memory 中，避免写回 HBM 再读取。融合还能减少 Kernel Launch 开销（每次 Launch 约 5--20$\mu$s 的 CPU 调度延迟）。工业界 vLLM、TensorRT-LLM 等均大量采用融合。关于算子融合的收益，下列说法\textbf{错误}的是}{}
+\fourchoices{融合多个算子可减少 Kernel Launch 次数，降低 CPU 侧调度开销，对短算子链尤其明显}{融合后中间激活可保留在片上存储（寄存器/Shared Memory），减少 HBM 读写往返}{算子融合一定能将任意两个算子的总执行时间精确减半，且不受寄存器数量和算子形状限制}{RMSNorm + Linear、SiLU + Mul（SwiGLU 门控）是工业界最常见、收益最明显的融合模式之一}
 
-\qitem{7}{在 W8A8 量化推理中，设激活 $\mathbf{X}$ 的 per-tensor 缩放因子为 $s_x$，权重 $\mathbf{W}$ 的 per-channel 缩放因子为 $s_w^{(j)}$（$j$ 为输出通道索引）。则等价的 fp32 线性层输出可写为}{}
-\fourchoices{$\mathbf{Y} = (\mathbf{X}_{\mathrm{int8}} \mathbf{W}_{\mathrm{int8}}) \cdot s_x \cdot s_w$}{$\mathbf{Y} = (\mathbf{X}_{\mathrm{int8}} \odot s_x)(\mathbf{W}_{\mathrm{int8}} \odot s_w)$，其中量化 GEMM 内核在 INT32 累加后乘 $s_x \cdot s_w^{(j)}$}{W8A8 要求权重和激活必须使用相同的量化粒度（均为 per-tensor）}{INT8 GEMM 直接在 INT8 域完成最终输出，无需反量化到 fp32}
+\qitem{7}{W8A8 量化推理将权重和激活均量化为 INT8，在 INT32 累加器上完成 GEMM 后再反量化到 fp16/fp32。设激活 $\mathbf{X}$ 使用 per-tensor 缩放因子 $s_x$（整个张量共用一个 scale），权重 $\mathbf{W}$ 使用 per-channel 缩放因子 $s_w^{(j)}$（每个输出通道 $j$ 独立 scale，精度更高）。量化值为 $\mathbf{X}_{\mathrm{int8}}=\mathrm{round}(\mathbf{X}/s_x)$，$\mathbf{W}_{\mathrm{int8}}=\mathrm{round}(\mathbf{W}_{:,j}/s_w^{(j)})$。则等价的 fp32 线性层输出在工程实现中通常写为}{}
+\fourchoices{$\mathbf{Y} = (\mathbf{X}_{\mathrm{int8}} \mathbf{W}_{\mathrm{int8}})$，直接输出 INT8 结果，无需反量化}{先执行 INT32 累加的 $\mathbf{Y}_{\mathrm{int32}}=\mathbf{X}_{\mathrm{int8}}\mathbf{W}_{\mathrm{int8}}$，再对每个输出通道 $j$ 乘 $s_x\cdot s_w^{(j)}$ 反量化到 fp16/fp32}{W8A8 严格要求权重和激活均使用 per-tensor 量化，不允许 per-channel}{INT8 GEMM 的累加必须在 INT8 域完成并直接输出，使用 INT32 累加器属于数值错误}
 
-\qitem{8}{关于 NVIDIA Tensor Core 的 MMA（Matrix Multiply-Accumulate）指令，下列说法\textbf{正确}的是}{}
-\fourchoices{Tensor Core 仅支持 FP32 输入与 FP32 累加}{标准 FP16 MMA 指令形状为 $m16n8k16$，即每次处理 $16\times8$ 的输出块，$K$ 维度每次累加 16}{Tensor Core 与 CUDA Core 在硬件上完全独立，无法在同一次 Kernel 中混用}{使用 Tensor Core 的 GEMM 不需要对矩阵做分块（Tiling）}
+\qitem{8}{NVIDIA Tensor Core 自 Volta 架构引入，专门加速矩阵乘累加（MMA）。以 FP16 输入为例，标准 MMA 指令形状为 $m16n8k16$：每次处理 $16\times8$ 的输出 tile，沿 $K$ 维每次累加 16 个元素；输入为 FP16/BF16，累加器为 FP32 以保证精度。CUTLASS、cuBLASLt 等库通过多级 Tiling 将大 GEMM 分解为适配 MMA 形状的子块。关于 Tensor Core，下列说法\textbf{正确}的是}{}
+\fourchoices{Tensor Core 仅支持 FP32 输入与 FP32 累加，与 CUDA Core 无区别}{标准 FP16 MMA 指令形状为 $m16n8k16$，输入 FP16/BF16、累加器 FP32；高效 GEMM 仍需配合多级 Tiling}{Tensor Core 与 CUDA Core 互斥，同一次 Kernel Launch 中不能混用二者}{调用 cuBLAS 的 GEMM 会自动使用 Tensor Core，开发者无需关心 Tiling 与数据布局}
 
-\qitem{9}{下列关于 GPTQ、AWQ、SmoothQuant 三种量化算法\textbf{实现逻辑}的匹配，\textbf{正确}的是}{}
-\fourchoices{GPTQ 基于 Hessian 二阶信息逐列量化权重；AWQ 基于显著权重通道缩放；SmoothQuant 通过 $S$ 矩阵将激活离群点迁移到权重侧}{GPTQ 基于激活值平滑；AWQ 基于 Hessian 逐列量化；SmoothQuant 基于显著通道缩放}{三者均属于 QAT（量化感知训练），需要完整反向传播}{三者均只量化权重，推理时激活值保持 fp32}
+\qitem{9}{GPTQ、AWQ、SmoothQuant 是大模型 PTQ（训练后量化）的三类代表性方法，其实现逻辑各不相同。GPTQ（Frantar et al., 2023）利用 Hessian 二阶信息逐列量化权重并传播误差；AWQ（Lin et al., 2024）识别对输出影响大的"显著权重通道"并按比例缩放；SmoothQuant（Xiao et al., 2023）通过可学习的对角矩阵 $S$ 将激活值中的离群点（Outlier）平滑迁移到权重侧，使激活更易量化。下列关于三者\textbf{实现逻辑}的匹配，\textbf{正确}的是}{}
+\fourchoices{GPTQ 基于 Hessian 二阶信息逐列量化权重；AWQ 基于显著权重通道缩放；SmoothQuant 通过 $S$ 矩阵将激活离群点迁移到权重侧}{GPTQ 基于激活值平滑迁移；AWQ 基于 Hessian 逐列量化；SmoothQuant 基于显著通道缩放}{三者均属于 QAT（量化感知训练），训练时需插入 FakeQuant 算子并完整反向传播}{三者均只量化权重（Weight-Only），推理时激活值始终保持 fp32 不做任何压缩}
 
-\qitem{10}{关于 Triton 与手写 CUDA 的编程模型差异，下列说法\textbf{正确}的是}{}
-\fourchoices{Triton 以 Thread 为基本编程单元，开发者需手动管理每个线程的索引}{Triton 以 Block 为基本抽象，编译器自动处理 Thread/Warp 级并行与内存合并访问}{Triton 无法编写自定义 GEMM Kernel，只能调用 cuBLAS}{手写 CUDA 无法做算子融合，Triton 才可以}
+\qitem{10}{Triton（OpenAI）是面向 GPU 的高级 DSL，以 Block 为基本编程抽象：开发者描述"每个 Block 做什么"，编译器自动生成 Thread/Warp 索引、内存合并访问（Coalesced Access）和 Shared Memory 布局。相比之下，手写 CUDA 需显式管理 \texttt{threadIdx}、\texttt{blockIdx}、Warp 级原语（如 \texttt{\_\_shfl\_sync}）等底层细节。Triton 已广泛用于 FlashAttention、量化 GEMM 等自定义 Kernel。关于二者差异，下列说法\textbf{正确}的是}{}
+\fourchoices{Triton 以 Thread 为基本编程单元，开发者需像 CUDA 一样手动计算每个线程的全局索引}{Triton 以 Block 为基本抽象，编译器自动处理 Thread/Warp 级并行与 Global Memory 合并访问}{Triton 无法编写自定义 GEMM Kernel，所有矩阵乘法必须调用 cuBLAS}{手写 CUDA 完全无法做算子融合，融合优化只能由 Triton 实现}
 
-\qitem{11}{FlashAttention-2 相比 FlashAttention-1 的主要改进\textbf{不包括}}{}
-\fourchoices{减少非矩阵乘法的 FLOPs（如减少 rescale 操作）}{在 Warp 级别更好地并行化 attention 计算}{将 $Q$、$K$、$V$ 的 SRAM 分块策略从单线程块改为跨 Warp 分工}{将注意力计算的 IO 复杂度从 $O(N^2)$ 提升到 $O(N^3)$}
+\qitem{11}{FlashAttention（Dao et al., NeurIPS 2022）通过 Tiling 将 $Q,K,V$ 分块加载到 SRAM，在片上完成 Online Softmax 并增量累加输出，避免将完整的 $N\times N$ 注意力矩阵 $S,P$ 写回 HBM。FlashAttention-2（Dao, 2023）进一步在 Warp 级别并行化、减少非矩阵乘 FLOPs，并优化了 SRAM 中的工作划分。关于 FlashAttention-2 的改进，下列\textbf{不包括}在内的是}{}
+\fourchoices{减少非矩阵乘法的 FLOPs（如对 running statistic 的 rescale 操作进行合并与简化）}{在 Warp 级别更好地并行化 attention 计算，提升 SM 利用率}{将 $Q$、$K$、$V$ 的 SRAM 分块策略优化为跨 Warp 分工协作}{将注意力计算的 HBM IO 复杂度从 $O(N^2d^2/M)$ 提升到 $O(N^3)$，以换取更低的 SRAM 占用}
 
-\qitem{12}{关于 XLA / TVM 等深度学习编译器对计算图的优化，下列说法\textbf{正确}的是}{}
-\fourchoices{XLA 的 HLO 图优化不支持算子融合，融合只能由 PyTorch eager 模式完成}{TVM 通过 AutoTVM / Ansor 对 Kernel 的 tile size、unroll factor 等超参进行自动搜索}{TVM 只能为 CPU 生成代码，不支持 GPU}{XLA 的 Layout 优化与 Kernel Fusion 无关，二者互不影响}
+\qitem{12}{XLA（Google）和 TVM（Apache）是两类主流的深度学习编译器。XLA 将 TensorFlow/JAX 计算图降低为 HLO（High Level Optimizer）中间表示，执行算子融合（Fusion）、公共子表达式消除（CSE）、内存布局优化（Layout）等 Pass 后生成 LLVM/CUDA 代码。TVM 通过 AutoTVM/Ansor 对 Kernel 的 tile size、unroll factor、并行策略等超参进行自动搜索（Auto-tuning），在多种硬件后端上寻找最优实现。关于编译器优化，下列说法\textbf{正确}的是}{}
+\fourchoices{XLA 的 HLO 图优化不支持算子融合，PyTorch Eager 模式下执行的算子无法被 XLA 优化}{TVM 通过 AutoTVM / Ansor 对 Kernel 的 tile size、unroll factor 等超参进行自动搜索，可面向 GPU/CPU 等多种后端}{TVM 是 Google 内部专用工具，只能为 TPU 生成代码，不支持 NVIDIA GPU}{XLA 的 Layout Optimization 与 Kernel Fusion 完全独立、互不影响，融合不会改变张量内存布局}
 
 \examsection{二、填空题}{本大题共 6 小题，每小题 5 分，共 30 分。把答案填在题中横线上。}
 
-\qitem{13}{设 A100 GPU 的 FP16 Tensor Core 峰值算力 $P_{\mathrm{peak}}=312$ TFLOPS，HBM 峰值带宽 $B_w=2039$ GB/s，则 Roofline 模型的 Ridge Point 算术强度 $I^*=\dfrac{P_{\mathrm{peak}}}{B_w}\approx$ \blank{2.5cm} FLOP/Byte（保留整数）。}{}
+\qitem{13}{Roofline 模型中，Ridge Point $I^*=P_{\mathrm{peak}}/B_w$ 是判断算子瓶颈的关键阈值。设 NVIDIA H100-80GB（SXM）的 FP16 Tensor Core 稠密峰值算力 $P_{\mathrm{peak}}=989$ TFLOPS，HBM3 峰值带宽 $B_w=3350$ GB/s（取整）。则 $I^*=$ \blank{2.5cm} FLOP/Byte（保留整数）。若某 Decode 阶段算子的实测算术强度 $I=2$ FLOP/Byte，则该算子属于 \blank{3cm}（填 Compute-bound 或 Memory-bound）。}{}
 
-\qitem{14}{对 GEMM $C_{M\times N}=A_{M\times K}B_{K\times N}$，若采用\textbf{朴素实现}（每个 $C$ 元素独立从 HBM 读取完整 $A$ 行与 $B$ 列，无数据复用），以 fp32 存储，则从 HBM 读取 $A,B$ 并写回 $C$ 的总数据量为 \blank{5cm} 字节。}{}
+\qitem{14}{对 GEMM $C_{M\times N}=A_{M\times K}B_{K\times N}$，若采用\textbf{朴素实现}（计算每个 $C_{ij}$ 时从 HBM 重新读取 $A$ 的第 $i$ 行和 $B$ 的第 $j$ 列，$A,B$ 元素无任何复用），矩阵以 fp32 存储。则从 HBM 读取 $A,B$ 并写回 $C$ 的总数据量为 \blank{5cm} 字节。高效实现（如 CUTLASS）通过 Tiling 使每个元素被复用多次，可将 HBM 访问量降低约 \blank{2.5cm} 倍（填数量级整数，如 $10$, $100$）。}{}
 
-\qitem{15}{某 CUDA Kernel 每个 Thread Block 配置 256 个线程（即 8 个 Warp），每线程使用 64 个 32-bit 寄存器，不使用 Shared Memory。已知 SM 寄存器总量为 65536 个 32-bit 寄存器，则每个 SM 最多可同时驻留 \blank{2cm} 个该 Kernel 的 Thread Block（取整数）。}{}
+\qitem{15}{CUDA Occupancy（占用率）指 SM 上活跃 Warp 数占最大支持 Warp 数的比例，受寄存器、Shared Memory 和 Block 大小限制。某 Kernel 每个 Thread Block 配置 256 个线程（8 个 Warp），每线程使用 64 个 32-bit 寄存器，不使用 Shared Memory。H100 每个 SM 的寄存器文件总量为 65536 个 32-bit 寄存器。则每个 SM 最多可同时驻留 \blank{2cm} 个该 Kernel 的 Thread Block；若 H100 每个 SM 最多支持 64 个 Warp，则该 Kernel 的理论最大 Occupancy 为 \blank{2.5cm}（填百分比如 $50\%$）。}{}
 
-\qitem{16}{SmoothQuant 对线性层 $\mathbf{Y}=\mathbf{X}\mathbf{W}$ 引入对角矩阵 $S=\mathrm{diag}(s_1,\ldots,s_{d_{\mathrm{in}}})$，则数学等价的变换为 $\mathbf{Y}=$ \blank{5cm}。}{}
+\qitem{16}{SmoothQuant（Xiao et al., ICML 2023）对线性层 $\mathbf{Y}=\mathbf{X}\mathbf{W}$ 引入对角缩放矩阵 $S=\mathrm{diag}(s_1,\ldots,s_{d_{\mathrm{in}}})$，将激活离群点迁移到权重侧。数学等价的变换为 $\mathbf{Y}=$ \blank{5cm}。缩放因子公式为 $s_j=\dfrac{c_j^{\alpha}}{w_j^{1-\alpha}}$，其中 $c_j$ 为激活通道 $j$ 的最大绝对值，$w_j$ 为权重列 $j$ 的最大绝对值，$\alpha\in(0,1]$ 控制迁移强度。当 $\alpha=1$ 时，离群点完全由 \blank{2.5cm}（填"激活"或"权重"）侧承担缩放。}{}
 
-\qitem{17}{未融合时，LayerNorm 输出 $\mathbf{h}$（大小 $d$ 维，fp16）写回 HBM 后，Linear 层再从 HBM 读取 $\mathbf{h}$ 做 GEMM。将二者融合为一个 Kernel 后，可节省 \blank{2.5cm} 次对 $\mathbf{h}$ 的完整 HBM 读写（读+写合计算 1 次往返）。}{}
+\qitem{17}{算子融合可减少中间张量的 HBM 往返。未融合时，RMSNorm 将输出 $\mathbf{h}\in\mathbb{R}^{d}$（fp16，$d$ 为隐藏维度）写回 HBM，随后 Linear 层再从 HBM 读取 $\mathbf{h}$ 做 GEMM $\mathbf{Y}=\mathbf{h}W$。将 RMSNorm + Linear 融合为单个 Kernel 后，$\mathbf{h}$ 可保留在寄存器/Shared Memory 中，节省 \blank{2cm} 次对 $\mathbf{h}$ 的完整 HBM 读写（1 次写 + 1 次读 $=2$ 次往返）。若 Batch Size 为 $b$，则每前向步节省的 HBM 字节数为 \blank{3.5cm}。}{}
 
-\qitem{18}{模型 FLOPs 利用率（Model FLOPs Utilization, MFU）定义为：$\mathrm{MFU}=$ \blank{6cm}。}{}
+\qitem{18}{模型 FLOPs 利用率（Model FLOPs Utilization, MFU）是衡量大模型训练/推理硬件效率的核心指标，定义为实际达到的 FLOPs/s 与硬件峰值 FLOPs/s 之比：$\mathrm{MFU}=$ \blank{5cm}。PaLM 论文报告 540B 模型在 TPU v4 上 MFU 约 46\%。若 H100 峰值为 989 TFLOPS，实测某 70B 模型推理吞吐等价于 120 TFLOPS，则 MFU $=$ \blank{2.5cm}（保留整数百分比）。}{}
 
 \examsection{三、解答题}{本大题共 6 小题，共 60 分。解答应写出文字说明、证明过程或演算步骤。}
 
 \qitem{19}{（本小题满分 10 分）}{}
-\noindent Roofline 模型是分析大模型算子性能瓶颈的核心工具。设 Transformer FFN 层中升维 GEMM 为 $C_{b\times 4h}=A_{b\times h}B_{h\times 4h}$（$b$ 为批大小，$h$ 为隐藏维度），权重与激活均用 fp16 存储。
+\noindent \textbf{【基础概念与简单计算】} GPU 存储层级与 Roofline 模型是大模型高性能计算的入门知识。请结合以下已知信息作答。
+
+\noindent\textbf{已知：} Roofline 模型中，算术强度 $I=\dfrac{\text{FLOPs}}{\text{HBM 访问字节数}}$，Ridge Point $I^*=\dfrac{P_{\mathrm{peak}}}{B_w}$；实际吞吐 $\approx\min(P_{\mathrm{peak}},\, I\cdot B_w)$。H100-80GB 参数：$P_{\mathrm{peak}}=989$ TFLOPS（FP16 稠密），$B_w=3350$ GB/s。
+
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 推导该 GEMM 的算术强度 $I$（FLOP/Byte），用 $b,h$ 表示；（3 分）
-  \item 取 $b=1$，$h=4096$，A100 参数同第 13 题，判断该 GEMM 处于 Compute-bound 还是 Memory-bound；（3 分）
-  \item 针对（2）中的瓶颈类型，给出 2 条可落地的优化策略并简述原理。（4 分）
+  \item 用一句话分别说明 Register、Shared Memory、L2 Cache、HBM 在 GPU 存储层级中的角色（容量与速度特点）；（4 分）
+  \item 利用已知公式计算 H100 的 Ridge Point $I^*$（保留整数），并说明 $I^*=295$ FLOP/Byte 的物理含义：算术强度低于/高于此值时分别受什么限制？（3 分）
+  \item 某 GEMM 实测 $I=10$ FLOP/Byte，请用 Roofline 公式估算其可达吞吐（TFLOPS，保留整数），并判断瓶颈类型。（3 分）
 \end{enumerate}
 
 \answerlines{8}
 
 \needspace{6cm}
 \qitem{20}{（本小题满分 10 分）}{}
-\noindent 高效 GEMM 实现（如 CUTLASS）采用三级分块（Hierarchical Tiling）充分利用 GPU 存储层级。
+\noindent \textbf{【基础计算：KV Cache 与 Decode 带宽】} 自回归 Decode 阶段的性能瓶颈往往来自 KV Cache 的 HBM 带宽，而非算力。
+
+\noindent\textbf{已知：} 单条请求 KV Cache 显存（fp16）为
+\[
+M_{\mathrm{KV}} = 2 \times L \times n \times h_{\mathrm{kv}} \times d_h \times 2\;\text{字节},
+\]
+其中 $L$ 为层数，$n$ 为当前序列长度，$h_{\mathrm{kv}}$ 为 KV 头数，$d_h$ 为每头维度，因子 $2$ 表示 K 与 V 各一份。Decode 每步需从 HBM \textbf{读取}上述全部 KV（不重新计算历史 $K,V$）。算术强度近似 $I_{\mathrm{decode}}\approx \dfrac{2d}{M_{\mathrm{KV}}/n}$ FLOP/Byte（每步 FLOPs $\propto d$，每步读取字节 $\propto M_{\mathrm{KV}}$）。
+
+\noindent 模型参数：$L=80$，$h_{\mathrm{kv}}=8$（GQA），$d_h=128$，$n=4096$，fp16。
+
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 分别说明 Thread Block Tile、Warp Tile、Register Fragment 三级分块各自驻留在哪级存储，以及各自的作用；（4 分）
-  \item 设 Block Tile 大小为 $B_M\times B_N\times B_K$，推导采用该分块后，完成整个 GEMM 从 HBM 读取 $A,B$ 的总数据量量级（用 $M,N,K,B_M,B_N,B_K$ 表示），并说明相比朴素实现降低了多少倍；（4 分）
-  \item 说明 GEMM Kernel 中 Global Memory Coalesced Access 与 Shared Memory Bank Conflict 的含义及规避方法。（2 分）
+  \item 代入公式计算该请求 KV Cache 总显存 $M_{\mathrm{KV}}$（用 GB 表示，保留两位小数）；（3 分）
+  \item 估算 Decode 每步需从 HBM 读取的 KV 数据量（GB，保留两位小数），并说明为何 Decode 通常是 Memory-bound；（3 分）
+  \item 若将存储精度从 fp16 改为 fp8，$M_{\mathrm{KV}}$ 变为原来的多少？结合 H100 Ridge Point，说明此举为何能缓解带宽瓶颈。（4 分）
 \end{enumerate}
 
 \answerlines{8}
 
 \needspace{6cm}
 \qitem{21}{（本小题满分 10 分）}{}
-\noindent 标准 Self-Attention 在硬件实现中受限于 HBM 带宽。FlashAttention 通过 Tiling 与 Online Softmax 在 SRAM 中完成分块计算。
+\noindent \textbf{【FlashAttention：公式理解与图示分析】}（图源：Dao et al., ``FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness'', NeurIPS 2022, \textbf{Figure 2}）
+
+\figplaceholder{请从 FlashAttention 论文 Figure 2 复制原图粘贴于此。该图对比了标准 Attention（左）与 FlashAttention（右）的 HBM 与 SRAM 数据访问模式。}{Dao et al., NeurIPS 2022, Figure 2}
+
+\noindent\textbf{已知：} FlashAttention 的 Online Softmax 在遇到第 $j$ 个 $K,V$ 块时，用以下公式增量更新 running statistic（$m$：行最大值，$\ell$：归一化因子，$O$：输出累加器）：
+\[
+m'=\max(m,\; m^{(j)}),\quad
+\ell' = e^{m-m'}\ell + e^{m^{(j)}-m'}\ell^{(j)},\quad
+O' = \frac{\ell}{\ell'}O\cdot e^{m-m'} + \frac{e^{m^{(j)}-m'}}{\ell'}O^{(j)}.
+\]
+
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 写出标准注意力 $S=QK^{\top}$、$P=\mathrm{softmax}(S)$、$O=PV$ 三步骤中，$S$ 与 $P$ 矩阵各需几次 HBM 写和读（不考虑 $Q,K,V,O$ 的读写）；（3 分）
-  \item 描述 FlashAttention 的 Online Softmax：设当前块得分为 $S^{(j)}$，已有 running max $m$、running sum $\ell$、输出累加器 $O$，写出遇到新块时的更新公式；（4 分）
-  \item 设 SRAM 容量为 $M_{\mathrm{sram}}$，序列长度 $N$，头维度 $d$，推导 FlashAttention 的 HBM IO 复杂度，并说明 Recomputation 在反向传播中"以算代存"的含义。（3 分）
+  \item 结合上图，说明标准 Attention 将 $S=QK^{\top}$ 和 $P=\mathrm{softmax}(S)$ 写回 HBM 会带来什么问题；FlashAttention 如何避免？（3 分）
+  \item 解释 $m'$ 和 $\ell'$ 的更新公式中 $e^{m-m'}$ 项的作用：为何需要在合并新块时 rescale 旧的 $\ell$ 和 $O$？（4 分）
+  \item 已知 SRAM 容量 $M_{\mathrm{sram}}$，序列长度 $N$，头维度 $d$，FlashAttention 的 HBM IO 复杂度为 $O(N^2d^2/M_{\mathrm{sram}})$。当 $N=8192$，$d=128$，$M_{\mathrm{sram}}=192$ KB 时，说明该复杂度相比标准 Attention 的 $O(N^2)$ 写出有何优势。（3 分）
 \end{enumerate}
 
 \answerlines{10}
 
 \needspace{6cm}
 \qitem{22}{（本小题满分 10 分）}{}
-\noindent 大模型推理量化需要在算法与内核两个层面协同设计。
+\noindent \textbf{【量化：公式应用与计算】}
+
+\noindent\textbf{已知：} SmoothQuant 缩放因子 $s_j=\dfrac{c_j^{\alpha}}{w_j^{1-\alpha}}$，等价变换 $\mathbf{Y}=(\mathbf{X}S)(S^{-1}\mathbf{W})$，其中 $S=\mathrm{diag}(s_1,\ldots,s_d)$。GPTQ 量化第 $j$ 列权重后，按 Hessian 逆矩阵传播误差：
+\[
+\delta w_j = \hat{w}_j - w_j,\quad
+w_i \leftarrow w_i - \frac{H^{-1}_{ij}}{H^{-1}_{jj}}\,\delta w_j \quad (i>j).
+\]
+
+\noindent 对某线性层第 3 个输入通道：$c_3=32$，$w_3=0.5$，$\alpha=0.5$。
+
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 给出 SmoothQuant 中缩放因子 $s_j$ 的公式（$c_j$ 为激活通道 $j$ 的最大绝对值，$w_j$ 为权重列 $j$ 的最大绝对值，迁移强度 $\alpha\in(0,1]$），并解释 $\alpha=0.5$ 的物理含义；（3 分）
-  \item 描述 INT4 权重 Packed GEMM 的内核实现流程：4 个 INT4 权重如何打包存储，GEMM 时如何解包并在何种精度下累加；（4 分）
-  \item 简述 GPTQ 逐列量化中 Hessian 矩阵 $H$（或 $H^{-1}$）如何用于最小化量化误差 $\|H(\hat{w}-w)\|^2$ 的传播与更新。（3 分）
+  \item 计算 $s_3$ 的值（保留两位小数），并说明 $\alpha=0.5$ 时激活与权重各承担多少量化难度；（3 分）
+  \item 说明 $(\mathbf{X}S)(S^{-1}\mathbf{W})$ 为何与 $\mathbf{XW}$ 数学等价；从数值分布角度解释为何 $\mathbf{X}S$ 比 $\mathbf{X}$ 更易量化；（3 分）
+  \item 设 GPTQ 量化 $w_3$ 后 $\hat{w}_3=0.48$（$\delta w_3=-0.02$），$H^{-1}_{33}=1.0$，$H^{-1}_{34}=0.1$，$w_4=1.0$。按上述公式计算更新后的 $w_4$。（4 分）
 \end{enumerate}
 
 \answerlines{8}
 
 \needspace{6cm}
 \qitem{23}{（本小题满分 10 分）}{}
-\noindent 编译器优化是大模型高性能计算的重要一环。
-\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 列举 XLA 在 HLO 层面常做的 3 种图优化 Pass，并各用一句话说明其作用；（3 分）
-  \item 以 RMSNorm + Linear 为例，画出算子融合前后的数据流（可用文字描述：哪些张量写回 HBM、哪些保留在片上），并量化融合后减少的 HBM 访问量；（4 分）
-  \item 说明 Triton 的 \texttt{@triton.autotune} 机制如何搜索最优 \texttt{BLOCK\_SIZE} 和 \texttt{num\_warps}，以及其代价模型关注的核心指标。（3 分）
-\end{enumerate}
+\noindent \textbf{【架构设计：PagedAttention 显存管理】}（图源：Kwon et al., ``Efficient Memory Management for Large Language Model Serving with PagedAttention'', SOSP 2023, \textbf{Figure 4}）
 
-\answerlines{8}
+\figplaceholder{请从 vLLM 论文 Figure 4 复制原图粘贴于此。该图展示了 PagedAttention 将 KV Cache 划分为固定大小 Block，并通过 Block Table 映射到非连续物理页的逻辑地址空间。}{Kwon et al., SOSP 2023, Figure 4}
 
-\needspace{6cm}
-\qitem{24}{（本小题满分 10 分，压轴）}{}
-\noindent 某 LLM 推理服务部署在单卡 A100-80GB 上，模型 70B 参数量（fp16），承担在线对话（平均序列 2k tokens，Decode 为主）负载。系统观测到：（a）GPU SM 占用率仅 40\%；（b）Nsight Compute 显示 \texttt{dram\_throughput} 接近峰值而 \texttt{sm\_\_throughput} 很低；（c）单请求 Decode 延迟随上下文长度线性增长。
+\noindent 某团队计划在单卡 H100-80GB 上部署 70B 模型（fp16 权重约 140GB，需量化至 W8A8 约 70GB 方可放下），同时服务 100 个并发对话请求，平均上下文 4k tokens，峰值 32k tokens。模型：$L=80$，$h_{\mathrm{kv}}=8$，$d_h=128$，Block 大小 $B=16$ tokens（vLLM 默认）。
+
 \begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
-  \item 用 Roofline 模型分析现象（b），说明 Decode 阶段的瓶颈类型，并写出 KV Cache 每步读取字节量的公式；（3 分）
-  \item 针对现象（a）和（b），设计一套包含 Kernel Fusion、W8A8 量化、Custom Attention Kernel 的优化栈，说明每项优化如何提升 SM 利用率或降低 Memory-bound 程度；（4 分）
-  \item 使用 Nsight Systems / Nsight Compute 进行性能剖析时，应重点关注哪 3 个指标？如何根据这些指标判断优化是否生效？（3 分）
+  \item 结合上图，解释 PagedAttention 如何解决 KV Cache 的\textbf{内部碎片}和\textbf{外部碎片}问题；（3 分）
+  \item 计算单个请求在 $n=4096$ 时所需 KV Block 数量；100 个并发、平均 4k 时，KV Cache 总显存约多少 GB？（4 分）
+  \item 设计调度策略：当峰值 32k 请求与大量 4k 请求混合时，如何配置 Block 池大小与抢占（Preemption）策略以避免 OOM？（3 分）
 \end{enumerate}
 
 \answerlines{10}
+
+\needspace{6cm}
+\qitem{24}{（本小题满分 10 分，压轴）}{}
+\noindent \textbf{【综合架构设计：H100 推理优化栈】}（图源：Williams et al., ``Roofline: An Insightful Visual Performance Model for Multicore Architectures'', CACM 2009, \textbf{Figure 4}；可参考该 Roofline 图辅助分析）
+
+\figplaceholder{请从 Roofline 论文 Figure 4 复制原图粘贴于此（可选）。该图展示了算术强度与 attained GFLOP/s 的关系及 Ridge Point 拐点。}{Williams et al., CACM 2009, Figure 4}
+
+\noindent 某 LLM 推理服务部署在单卡 H100-80GB 上，70B 模型经 W8A8 量化后权重约 70GB，剩余约 10GB 可用于 KV Cache 与运行时缓冲。负载以 Decode 为主（平均上下文 2k tokens），观测到：SM 占用率 40\%；\texttt{dram\_throughput} 接近 90\% 峰值；\texttt{sm\_\_throughput} 仅 25\%。
+
+\begin{enumerate}[label=(\arabic*),leftmargin=2em,itemsep=0.2em,parsep=0pt,topsep=0pt]
+  \item 结合 Roofline 模型（$I^*\approx 295$ FLOP/Byte）分析上述 profiler 指标，说明瓶颈类型，并估算当前 Decode 算子的算术强度数量级；（3 分）
+  \item 设计一套分层优化栈（至少包含：算子融合、W8A8/FP8 KV、FlashAttention-2、Continuous Batching 中的 3 项），画出模块层次图或数据流，并说明每项在 Roofline 图上如何移动工作点；（4 分）
+  \item 给出验收指标：优化后应观测到哪 3 个 Nsight 指标的变化？各达到什么方向即可认为优化生效？（3 分）
+\end{enumerate}
+
+\answerlines{12}
 
 \newpage
 \begin{center}
@@ -232,164 +289,146 @@
 \end{multicols}
 
 \vspace{0.3cm}
-\noindent\textbf{1. B}\quad SM 是 GPU 的基本计算单元，内含多个 CUDA Core、Tensor Core、Warp 调度器和 Shared Memory。(A) 错误：每个 SM 含数十至上百个 CUDA Core。(C) 错误：Shared Memory 是 SM 内片上存储，与 L2 物理独立。(D) 错误：寄存器文件位于 SM 片上。Warp 是 SIMT 调度的基本单位（32 线程）。故选 B。
+\noindent\textbf{1. B}\quad SM 内含 CUDA Core、Tensor Core、Warp 调度器、Shared Memory 和 Register File。Warp（32 线程）是 SIMT 调度基本单位；分支发散会导致 Warp 内线程部分空闲。(A)(C)(D) 均与硬件事实不符。故选 B。
 
-\noindent\textbf{2. A}\quad 存储层级越靠近计算单元，带宽越高、延迟越低：Register（最快）$>$ Shared Memory $>$ L2 $>$ HBM（最慢、容量最大）。故选 A。
+\noindent\textbf{2. A}\quad 越靠近计算单元，带宽越高、延迟越低：Register $>$ Shared Memory $>$ L2 $>$ HBM。故选 A。
 
-\noindent\textbf{3. B}\quad Roofline 模型：$I<I^*$ 时性能受 HBM 带宽限制（Memory-bound），算力无法跑满；$I>I^*$ 时为 Compute-bound。故选 B。
+\noindent\textbf{3. B}\quad $I<I^*$ 时 $\min(P_{\mathrm{peak}}, I\cdot B_w)=I\cdot B_w$，性能受 HBM 带宽限制（Memory-bound）。故选 B。
 
-\noindent\textbf{4. B}\quad 每个 $C_{ij}$ 需 $K$ 次 MAC，共 $MNK$ 次 MAC；1 MAC $=$ 2 FLOPs，故总 FLOPs $=2MNK$。故选 B。
+\noindent\textbf{4. B}\quad $MNK$ 次 MAC，每次 2 FLOPs，合计 $2MNK$。故选 B。
 
-\noindent\textbf{5. B}\quad TPU 采用脉动阵列，权重预加载、数据在阵列中流动完成 MAC；GPU 采用 SIMT 模型，线程可执行不同分支。(A)(C)(D) 均错误。故选 B。
+\noindent\textbf{5. B}\quad TPU 脉动阵列数据流规整；GPU 为 SIMT 通用并行。故选 B。
 
-\noindent\textbf{6. C}\quad 融合能减少 HBM 往返和 Launch 开销，但并非任意两算子融合都能减半时间；融合受数据依赖、寄存器压力和算子形状约束。故选 C。
+\noindent\textbf{6. C}\quad 融合受寄存器压力、算子形状和数据依赖约束，不能保证任意两算子时间减半。故选 C。
 
-\noindent\textbf{7. B}\quad W8A8 内核流程：$\mathbf{X},\mathbf{W}$ 量化为 INT8 $\to$ INT32 累加 GEMM $\to$ 乘 $s_x\cdot s_w^{(j)}$ 反量化到 fp32。per-channel 权重 scale 是常见做法。故选 B。
+\noindent\textbf{7. B}\quad W8A8 标准流程：INT8 GEMM $\to$ INT32 累加 $\to$ 乘 $s_x\cdot s_w^{(j)}$ 反量化。故选 B。
 
-\noindent\textbf{8. B}\quad Tensor Core MMA 标准 FP16 形状为 $m16n8k16$；输入 FP16/BF16，累加器 FP32。GEMM 仍需多级 Tiling 才能高效利用 Tensor Core。故选 B。
+\noindent\textbf{8. B}\quad FP16 MMA 为 $m16n8k16$，累加器 FP32；仍需 Tiling。故选 B。
 
-\noindent\textbf{9. A}\quad GPTQ 用 Hessian 逐列权重量化；AWQ 保护显著权重通道；SmoothQuant 用 $S$ 矩阵平滑激活离群点。三者均为 PTQ。故选 A。
+\noindent\textbf{9. A}\quad GPTQ（Hessian 逐列）、AWQ（显著通道）、SmoothQuant（激活平滑迁移），均为 PTQ。故选 A。
 
-\noindent\textbf{10. B}\quad Triton 以 Block 为编程抽象，编译器负责 Thread/Warp 映射与合并访存；CUDA 需手动管理线程索引。故选 B。
+\noindent\textbf{10. B}\quad Triton 以 Block 为抽象，编译器处理 Thread/Warp 与合并访存。故选 B。
 
-\noindent\textbf{11. D}\quad FlashAttention-2 改进包括减少非 GEMM FLOPs、更好 Warp 并行、优化 SRAM 分块；IO 复杂度仍为 $O(N^2d^2/M_{\mathrm{sram}})$，不会升到 $O(N^3)$。故选 D。
+\noindent\textbf{11. D}\quad FlashAttention-2 不会将 IO 升到 $O(N^3)$。故选 D。
 
-\noindent\textbf{12. B}\quad TVM/Ansor 自动搜索 tile size、unroll 等；XLA 支持 GPU 且含 Fusion、CSE、Layout 等 Pass。故选 B。
+\noindent\textbf{12. B}\quad TVM/Ansor 自动搜索超参，支持 GPU 等多后端。故选 B。
 
 \subsection*{\heiti 二、填空题答案}
 
-\noindent\textbf{13.}\quad $153$\quad $I^*=\dfrac{312\times10^{12}}{2039\times10^9}\approx153.0$ FLOP/Byte。
+\noindent\textbf{13.}\quad $295$\quad；\quad Memory-bound\quad $I^*=\dfrac{989\times10^{12}}{3350\times10^9}\approx295$ FLOP/Byte。$I=2\ll 295$，带宽受限。
 
-\noindent\textbf{14.}\quad $4(MK+KN+MN)$\quad 读 $A$：$MK$ 个 fp32（$4MK$ 字节）；读 $B$：$KN$ 个（$4KN$ 字节）；写 $C$：$MN$ 个（$4MN$ 字节）。合计 $4(MK+KN+MN)$ 字节。
+\noindent\textbf{14.}\quad $4(MK+KN+MN)$\quad；\quad $100$（或 $128$）\quad 朴素实现无复用；Tiling 典型降低 100 倍量级 HBM 访问。
 
-\noindent\textbf{15.}\quad $4$\quad 每 Block 耗寄存器 $=256\times64=16384$；$65536/16384=4$ 个 Block。
+\noindent\textbf{15.}\quad $4$\quad；\quad $50\%$\quad 每 Block 耗 $256\times64=16384$ 寄存器，$65536/16384=4$ Block；$4\times8=32$ Warp，占最大 64 Warp 的 50\%。
 
-\noindent\textbf{16.}\quad $(\mathbf{X}S)(S^{-1}\mathbf{W})$\quad 引入 $S$ 后 $\mathbf{Y}=\mathbf{X}S\cdot S^{-1}\mathbf{W}$，数学等价。
+\noindent\textbf{16.}\quad $(\mathbf{X}S)(S^{-1}\mathbf{W})$\quad；\quad 权重\quad $\alpha=1$ 时 $s_j=c_j/w_j^0=c_j$，缩放完全施加在权重侧。
 
-\noindent\textbf{17.}\quad $2$\quad 未融合：LN 写 HBM（1 次写）+ Linear 读 HBM（1 次读）$=2$ 次完整往返；融合后 $\mathbf{h}$ 留在寄存器/Shared Memory。
+\noindent\textbf{17.}\quad $2$\quad；\quad $4bd$ 字节\quad 节省 1 写 + 1 读；每元素 fp16 占 2 字节，共 $b\times d$ 元素，$2\times b\times d\times 2=4bd$。
 
-\noindent\textbf{18.}\quad $\dfrac{\text{实际 achieved FLOPs/s}}{\text{硬件峰值 FLOPs/s}}$（或等价地 $\dfrac{\text{实测吞吐 FLOPs}}{\text{理论峰值 FLOPs}}$）
+\noindent\textbf{18.}\quad $\dfrac{\text{实际 achieved FLOPs/s}}{\text{硬件峰值 FLOPs/s}}$\quad；\quad $12\%$\quad $120/989\approx12.1\%$。
 
 \subsection*{\heiti 三、解答题答案}
 
-\subsubsection*{19. Roofline 定量分析（10 分）}
+\subsubsection*{19. 基础概念与 Roofline 计算（10 分）}
 
-\noindent\textbf{(1) 算术强度（3 分）}
-
-FLOPs $=2b\cdot h\cdot 4h=8bh^2$。HBM 访问量（fp16，2 字节/元素）：读 $A$ 为 $2bh$ 元素，读 $B$ 为 $2\cdot h\cdot 4h=8h^2$ 元素，写 $C$ 为 $2b\cdot 4h$ 元素，总字节 $=2(2bh+8h^2+8bh)=4bh+16h^2+16bh=4(5bh+4h^2)$。故
-\[
-I=\frac{8bh^2}{4(5bh+4h^2)}=\frac{2bh^2}{5bh+4h^2}.
-\]
-
-\noindent\textbf{(2) 瓶颈判断（3 分）}
-
-$b=1$，$h=4096$：$I=\dfrac{2\times4096^2}{5\times4096+4\times4096^2}\approx\dfrac{2\times4096}{4\times4096+5}\approx0.49$ FLOP/Byte。$I^*\approx153$ FLOP/Byte，$I\ll I^*$，该 GEMM 处于 \textbf{Memory-bound}。
-
-\noindent\textbf{(3) 优化策略（4 分）}
+\noindent\textbf{(1) 存储层级（4 分）}
 
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{增大 Batch Size $b$}：$I\propto b$（分子 $8bh^2$，分母中 $bh$ 项主导时），提高算术强度，向 Compute-bound 靠近。
-  \item \textbf{算子融合}：将 LayerNorm/RMSNorm 与后续 Linear 融合，减少中间激活写回 HBM，降低有效字节数。
-  \item \textbf{分块 GEMM + Tensor Core}：虽不能改变 Roofline 定性结论，但提高实际带宽利用率，使 achieved FLOPs/s 更接近 Roofline 上限。
+  \item \textbf{Register}：线程私有，速度最快、容量最小（每线程 KB 级）。
+  \item \textbf{Shared Memory}：Block 内线程共享，SM 片上，需显式管理，速度接近 Register。
+  \item \textbf{L2 Cache}：芯片级统一缓存，容量 MB 级，对程序员透明。
+  \item \textbf{HBM}：容量最大（80GB），带宽高但延迟远高于片上存储。
 \end{itemize}
 
-\subsubsection*{20. GEMM 三级分块（10 分）}
+\noindent\textbf{(2) Ridge Point（3 分）}
 
-\noindent\textbf{(1) 三级分块（4 分）}
+$I^*=\dfrac{989\times10^{12}}{3350\times10^9}\approx295$ FLOP/Byte。物理含义：$I<295$ 时吞吐 $=I\cdot B_w$，受带宽限制；$I>295$ 时吞吐 $\approx 989$ TFLOPS，受算力限制。
 
-\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{Thread Block Tile}：驻留 Shared Memory；每个 Block 负责 $C$ 的一个 $B_M\times B_N$ 子块，协作加载 $A,B$ 的 $B_M\times B_K$、$B_K\times B_N$ 片。
-  \item \textbf{Warp Tile}：Warp 内分工，每个 Warp 处理 Block Tile 的子区域，协调 Shared Memory 访问。
-  \item \textbf{Register Fragment}：驻留寄存器；每个线程持有 $A,B$ 的小块（Fragment），通过 Tensor Core MMA 累加。
-\end{itemize}
+\noindent\textbf{(3) 吞吐估算（3 分）}
 
-\noindent\textbf{(2) HBM 访问量（4 分）}
+$I=10$ FLOP/Byte $\ll 295$，Memory-bound。可达吞吐 $\approx I\cdot B_w=10\times3350=33500$ GB/s$\times$... 注意单位：$I\cdot B_w=10\times3350$ GFLOPS $=33.5$ TFLOPS（保留整数约 \textbf{34 TFLOPS}）。
 
-分块后 $A$ 每元素被复用约 $B_N/B_K$ 次（沿 $N$ 方向），$B$ 每元素被复用约 $B_M/B_K$ 次。总 HBM 读取量量级为 $O\!\left(\dfrac{MNK}{B_K}\right)$。相比朴素 $O(MNK)$ 无复用，降低约 $\dfrac{B_M B_N}{B_K}$ 倍（典型 $B_M=B_N=B_K=128$ 时约 128 倍量级）。
+\subsubsection*{20. KV Cache 与 Decode 带宽（10 分）}
 
-\noindent\textbf{(3) Coalesced Access 与 Bank Conflict（2 分）}
+\noindent\textbf{(1) $M_{\mathrm{KV}}$（3 分）}
 
-Coalesced Access：相邻线程访问连续 Global Memory 地址，合并为少量 Cache Line 事务。Bank Conflict：多个线程同时访问 Shared Memory 同一 Bank 不同地址导致串行化；规避方法包括 padding（如 $B_K+1$ 列）使访问映射到不同 Bank。
+$M_{\mathrm{KV}}=2\times80\times4096\times8\times128\times2=2^{31}$ 字节 $=2$ GB。
 
-\subsubsection*{21. FlashAttention 内核原理（10 分）}
+\noindent\textbf{(2) 每步读取与 Memory-bound（3 分）}
 
-\noindent\textbf{(1) 标准注意力 HBM 读写（3 分）}
+每步读取全部 KV：约 2 GB。每步 FLOPs 仅 $O(d)\sim$ 数万，算术强度 $\sim 0.01$--$1$ FLOP/Byte $\ll 295$，故 Decode 为 Memory-bound。
 
-$S$：写 HBM 1 次（$N\times N$）；$P=\mathrm{softmax}(S)$：读 $S$ 1 次、写 $P$ 1 次；$O=PV$：读 $P$ 1 次。$S,P$ 合计：写 2 次、读 2 次（仅计 $S,P$ 矩阵）。
+\noindent\textbf{(3) fp8 KV（4 分）}
 
-\noindent\textbf{(2) Online Softmax 更新（4 分）}
+fp8 每标量 1 字节，$M_{\mathrm{KV}}$ 减半为 1 GB。HBM 读取量减半，在同样算力下有效带宽压力降低，工作点沿 Roofline 向左上方移动（等效提升吞吐）。
 
-设新块得分 $S^{(j)}$，旧 running max $m$，旧 sum $\ell$，旧输出 $O$。更新：
-\[
-m'=\max(m,\max(S^{(j)})),\quad
-\ell'=\ell\cdot e^{m-m'}+\sum e^{S^{(j)}-m'},\quad
-O'=\dfrac{\ell}{\ell'}O\cdot e^{m-m'}+\dfrac{e^{S^{(j)}-m'}}{\ell'}V^{(j)}.
-\]
+\subsubsection*{21. FlashAttention 公式与图示（10 分）}
 
-\noindent\textbf{(3) IO 复杂度与 Recomputation（3 分）}
+\noindent\textbf{(1) 图示分析（3 分）}
 
-分块大小受 $M_{\mathrm{sram}}$ 约束，每块 $Q_i,K_j,V_j$ 驻留 SRAM，不写出完整 $S,P$。HBM IO 复杂度 $O(N^2d^2/M_{\mathrm{sram}})$。反向传播不保存 $S,P$，在反向时重算前向分块（Recomputation），以额外计算换取 HBM 读写减少。
+标准 Attention 将 $N\times N$ 的 $S,P$ 写回 HBM 再读取，IO 量 $O(N^2)$，长序列时带宽成为瓶颈。FlashAttention 在 SRAM 分块计算 Online Softmax，$S,P$ 不写出，仅 $O$ 最终结果写回。
 
-\subsubsection*{22. 量化内核实现（10 分）}
+\noindent\textbf{(2) rescale 项（4 分）}
 
-\noindent\textbf{(1) SmoothQuant 公式（3 分）}
+$m'=\max(m,m^{(j)})$ 时若最大值更新，旧块的 softmax 归一化分母 $\ell$ 和分子贡献 $O$ 需按 $e^{m-m'}$ 重新缩放，以保证合并新块后全局 softmax 正确。
 
-\[
-s_j=\frac{c_j^\alpha}{w_j^{1-\alpha}},\quad \alpha\in(0,1].
-\]
-$\alpha=0.5$ 表示激活与权重各承担一半量化难度，离群点均匀迁移。
+\noindent\textbf{(3) 复杂度优势（3 分）}
 
-\noindent\textbf{(2) INT4 Packed GEMM（4 分）}
+标准 Attention HBM IO 至少 $O(N^2)$（写出 $S,P$）。FlashAttention 为 $O(N^2d^2/M_{\mathrm{sram}})$，$M_{\mathrm{sram}}$ 为常数时随 $N$ 增长更慢，长序列优势显著。
 
-4 个 INT4 打包进 1 个 INT32。Kernel 加载 INT32 后通过位操作（shift/mask）解包为 INT4，符号扩展后送入 INT32 累加器做 MAC；累加完成后乘 scale 反量化到 fp16/fp32。权重量化后显存降为 1/4。
+\subsubsection*{22. 量化公式应用（10 分）}
 
-\noindent\textbf{(3) GPTQ Hessian 更新（3 分）}
+\noindent\textbf{(1) $s_3$（3 分）}
 
-GPTQ 逐列量化权重，用 $H=2X^{\top}X$（Hessian）衡量各权重对损失的影响。量化第 $j$ 列产生误差 $\delta_j$，按 $H^{-1}$ 更新未量化列：$w_i\leftarrow w_i-\dfrac{H^{-1}_{ij}}{H^{-1}_{jj}}\delta_j$，将误差传播到剩余列以最小化 $\|H(\hat{w}-w)\|^2$。
+$s_3=\dfrac{32^{0.5}}{0.5^{0.5}}=\dfrac{\sqrt{32}}{\sqrt{0.5}}=\sqrt{64}=8.00$。$\alpha=0.5$ 时激活与权重各承担一半量化难度。
 
-\subsubsection*{23. 编译器与融合（10 分）}
+\noindent\textbf{(2) 等价性与易量化（3 分）}
 
-\noindent\textbf{(1) XLA HLO Pass（3 分）}
+$(\mathbf{X}S)(S^{-1}\mathbf{W})=\mathbf{X}(SS^{-1})\mathbf{W}=\mathbf{XW}$。$\mathbf{X}S$ 将大绝对值离群点除以 $s_j$ 压缩，动态范围变小，INT8 量化误差降低。
 
-\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{Kernel Fusion}：合并相邻算子，减少中间张量写回。
-  \item \textbf{CSE（公共子表达式消除）}：合并重复计算。
-  \item \textbf{Layout Optimization}：选择 NCHW/NHWC 等内存布局以匹配高效 Kernel。
-\end{itemize}
+\noindent\textbf{(3) GPTQ 更新（4 分）}
 
-\noindent\textbf{(2) RMSNorm + Linear 融合（4 分）}
+$w_4\leftarrow 1.0-\dfrac{0.1}{1.0}\times(-0.02)=1.0+0.002=1.002$。
 
-未融合：输入 $\to$ RMSNorm $\to$ $\mathbf{h}$ 写 HBM $\to$ Linear 读 $\mathbf{h}$ $\to$ 输出写 HBM。融合：输入 $\to$ RMSNorm（片上）$\to$ Linear（片上）$\to$ 输出写 HBM。节省 $\mathbf{h}$ 的 1 次写 + 1 次读 $=2\times d\times 2$ 字节（fp16）。
+\subsubsection*{23. PagedAttention 架构设计（10 分）}
 
-\noindent\textbf{(3) Triton autotune（3 分）}
+\noindent\textbf{(1) 碎片问题（3 分）}
 
-\texttt{@triton.autotune} 对 \texttt{BLOCK\_SIZE}、\texttt{num\_warps} 等配置枚举，每种配置实际运行 benchmark，选耗时最短者。代价模型关注：寄存器占用（影响 Occupancy）、Shared Memory 用量、 achieved FLOPs/s 或 latency。
+固定 Block（16 tokens）分配消除内部碎片；Block Table 将逻辑连续 KV 映射到非连续物理 Block，释放的 Block 可立即复用，消除外部碎片。
 
-\subsubsection*{24. 综合性能诊断（10 分）}
+\noindent\textbf{(2) Block 数量与总显存（4 分）}
 
-\noindent\textbf{(1) Roofline 与 KV Cache（3 分）}
+单请求 Block 数 $=\lceil 4096/16\rceil=256$。单请求 KV $\approx 2$ GB，100 并发 $\approx 200$ GB（需多卡或量化/卸载）。
 
-\texttt{dram\_throughput} 高、\texttt{sm\_\_throughput} 低 $\Rightarrow$ Memory-bound。Decode 每步 FLOPs $O(d)$ 但需读全量 KV Cache。单请求 KV 读取字节：
-\[
-M_{\mathrm{KV}}=2\times L\times n\times h\times d_h\times\text{bytes\_per\_scalar}
-\]
-（$L$ 层，$n$ 当前长度，$h$ 头数，$d_h$ 每头维度，因子 2 为 K+V。）
+\noindent\textbf{(3) 调度策略（3 分）}
+
+预分配 Block 池；长请求（32k）限制并发数或 KV Offload；短请求优先；OOM 时按 LRU 抢占/换出低优先级请求 KV。
+
+\subsubsection*{24. H100 综合架构设计（10 分）}
+
+\noindent\textbf{(1) Roofline 分析（3 分）}
+
+\texttt{dram\_throughput} 高、\texttt{sm\_\_throughput} 低 $\Rightarrow$ Memory-bound。Decode 算术强度约 0.1--2 FLOP/Byte，远低于 $I^*=295$。
 
 \noindent\textbf{(2) 优化栈（4 分）}
 
 \begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{W8A8}：权重/激活 INT8，HBM 读取量约减半，缓解带宽瓶颈。
-  \item \textbf{Kernel Fusion}：RMSNorm+Linear、SiLU+Mul 等融合，减少中间写回，提高算术强度。
-  \item \textbf{Custom Attention}：FlashAttention-2 / PagedAttention，分块 attention、减少 KV 碎片，提高带宽利用率与 SM 占用。
-  \item \textbf{增大并发 Batch}：提高 GEMM $M$ 维，使线性层从 Memory-bound 转向 Compute-bound，提升 SM 利用率。
+  \item \textbf{W8A8/FP8 KV}：减半 HBM 读取 $\to$ Roofline 上垂直上移。
+  \item \textbf{Kernel Fusion}：减少中间写回 $\to$ 提高有效 $I$ $\to$ 工作点右移。
+  \item \textbf{Continuous Batching}：增大有效 Batch $\to$ GEMM $M$ 维增大 $\to$ $I$ 提升。
+  \item \textbf{FlashAttention-2}：优化 attention 带宽利用。
 \end{itemize}
 
-\noindent\textbf{(3) Nsight 指标（3 分）}
+\noindent\textbf{(3) 验收指标（3 分）}
 
-\begin{itemize}[leftmargin=2em,itemsep=0pt,parsep=0pt,topsep=0pt]
-  \item \textbf{sm\_\_throughput}：优化后应上升，说明计算单元更忙。
-  \item \textbf{dram\_\_throughput / dram\_bytes\_read}：W8A8 和 Fusion 后应下降或单位 token 降低。
-  \item \textbf{achieved\_occupancy}：分块和寄存器优化后应提高；过低说明 Warp 空闲或寄存器压力过大。
+\texttt{sm\_\_throughput} 应上升；\texttt{dram\_bytes\_read}/token 应下降；\texttt{achieved\_occupancy} 应提升。
+
+\vspace{0.5cm}
+\noindent{\heiti 配图索引（供命题者替换占位符）：}
+\begin{itemize}[leftmargin=2em,itemsep=0.1em,parsep=0pt,topsep=0pt]
+  \item \textbf{第 21 题}：Dao et al., ``FlashAttention'', NeurIPS 2022, \textbf{Figure 2}
+  \item \textbf{第 23 题}：Kwon et al., ``PagedAttention / vLLM'', SOSP 2023, \textbf{Figure 4}
+  \item \textbf{第 24 题}：Williams et al., ``Roofline Model'', CACM 2009, \textbf{Figure 4}（可选）
 \end{itemize}
 
 \end{document}
